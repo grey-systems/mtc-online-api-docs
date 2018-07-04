@@ -770,7 +770,8 @@ paths:
             items: 
               $ref: '#/definitions/CustomerRelationship'
 definitions:
-  Beneficiary:       
+  Beneficiary:   
+    type: object
     required:         
       - "firstName"
       - "lastName"       
@@ -842,7 +843,8 @@ definitions:
         type: string
       message:
         type: string
-  SearchTransferRequest:       
+  SearchTransferRequest: 
+    type: object
     required: 
       - "dateFrom"
       - "dateTo"
@@ -1173,6 +1175,7 @@ definitions:
         type: string
         example: Bank Account Deposit
   CalculatorRequest: 
+    type: object
     properties: 
       sourceCurrency: 
         type: string
@@ -1261,6 +1264,7 @@ definitions:
         example: USA
         description: The country to which the bank account belongs
   CreateModifyBeneficiaryBankAccount: 
+    type: object
     required: 
       - number
       - currency
@@ -1370,6 +1374,7 @@ definitions:
         type: string 
         example: Passport
   CustomerIdentityDocument: 
+    type: object
     required: 
       - id 
       - documentNumber
