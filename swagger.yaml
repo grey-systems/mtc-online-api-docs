@@ -179,7 +179,27 @@ paths:
             example: data:image/x-png;base64,iVBORw0KGgoAAAANSUhEUgAAAf ....
         404: 
           description: No image found for the iddocument provided
-            
+    post:
+      tags: 
+        - account 
+      summary: upload a new file to an existent iddocument
+      consumes: 
+        - multipart/form-data
+      parameters: 
+        - name: iddocument
+          in: path
+          required: true
+          type: integer
+        - name: file
+          in: formData
+          type: file
+          description: the file to upload
+      responses: 
+        200: 
+          description: file uploaded correctly
+        404: 
+          description: the iddocument does not exists for this customer
+          
   /transfer/calculate: 
     post: 
       summary: calculator
@@ -332,7 +352,7 @@ paths:
     get: 
       summary: Gets payout payers
       description: Returns the list of available delivery Payers for a destination country, using an specific payout method and a payout currency. Also it returns the rate offered by the destination payer for that conditions
-      operationId: GetDeliveryPayers
+      operationId: GetPayers
       parameters: 
         - name: destinationCountry
           in: query
@@ -363,6 +383,56 @@ paths:
             type: array
             items: 
               $ref: '#/definitions/TransferPayer'
+  /transfer/catalog/payoutDestinations: 
+    get: 
+      tags: 
+        - transfer-catalogs
+      summary: gets payout destinations 
+      description: returns the list of available destination for a destination country, using an specific payout method, payout currency and payer. 
+      operationId: GetDestinations
+      parameters: 
+        - name: destinationCountry
+          in: query
+          type: string
+          required: true
+          description: the destination Country iso3
+        - name: sourceCountry
+          in: query
+          type: string
+          required: true
+          description: The source country iso3
+        - name: payoutMethodCode
+          in: query
+          type: string
+          required: true
+          description: The delivery method code
+        - name: payoutCurrency
+          in: query
+          type: string
+          required: true
+          description: The delivery currency
+        - name: payer
+          in: query
+          type: integer
+          required: true
+          description: The payer id
+      responses: 
+        200: 
+          description: list of available payers. Empty list if no destinations have been found
+          schema: 
+            $ref: '#/definitions/PayerDestination'
+  /data/idDocType: 
+    get: 
+      summary: Gets the identity document types available for a customer
+      tags: 
+        - data-catalogs
+      responses: 
+        200: 
+          description: List of all the available identity documents
+          schema: 
+            type: array 
+            items: 
+              $ref: '#/definitions/IdentityDocumentType'
   /data/country:
     get: 
       summary: Get the entire list of countries and its associated data
@@ -462,8 +532,27 @@ paths:
   /transfer: 
     post: 
       summary: Sends a transfer
-      description: Operation to send a transfer to the system. The mandatory information of the request can be found in the SendTransferRequest data scheme. However please take into account that depending on the configuration requested to GreySystems, additional fields can be marked as mandatory, and thus the system can reject a transfer if some mandatory fields are not provided (as 400 HTTP error). <br><br> Compliance Considerations<br><br> When some compliance rule is broken, an HTTP 409 (Conflict) error is returned with information about what specific rule has been broken , and additional information of the broken rule, so that the customer can ammend the transfer (if possible) to then send money. <br><br> Send operation is 100% stateless, this means that you as a caller, can retry the operation after ammend it, and the system will only store the transfer just in case all compliance rules are valid.  
+      description: | 
+        Operation to send a transfer to the system. The mandatory information of the request can be found in the SendTransferRequest data scheme. However please take into account that depending on the configuration requested to GreySystems, additional fields can be marked as mandatory, and thus the system can reject a transfer if some mandatory fields are not provided (as 400 HTTP error).
+          <br>
+          
+          **Additional Validations**
+          
+          * bankAccountId is required in case of the destination of the transfer is to a bank account 
+          * You have to provide `srcAmount` or `destAmount`, but do not provide the 2 values in the same request.
+          
+          **Compliance Considerations**
+          When some compliance rule is broken, an HTTP 409 (Conflict) error is returned with information about what specific rule has been broken , and additional information of the broken rule, so that the customer can ammend the transfer (if possible) to then send money.
+          <br>
+          As compliance rules are configured ad-hoc for your company, GreySystems will provide extra information about how to handle specifically all rules configured for you. 
+          
       operationId: sendTransfer
+      parameters: 
+        - name: transferRequest
+          in: body
+          required: true
+          schema: 
+            $ref: '#/definitions/SendTransferRequest'
       tags: 
         - transfers
       responses: 
@@ -702,7 +791,8 @@ paths:
             items: 
               $ref: '#/definitions/CustomerRelationship'
 definitions:
-  Beneficiary:       
+  Beneficiary:   
+    type: object
     required:         
       - "firstName"
       - "lastName"       
@@ -774,7 +864,8 @@ definitions:
         type: string
       message:
         type: string
-  SearchTransferRequest:       
+  SearchTransferRequest: 
+    type: object
     required: 
       - "dateFrom"
       - "dateTo"
@@ -1105,6 +1196,7 @@ definitions:
         type: string
         example: Bank Account Deposit
   CalculatorRequest: 
+    type: object
     properties: 
       sourceCurrency: 
         type: string
@@ -1193,6 +1285,7 @@ definitions:
         example: USA
         description: The country to which the bank account belongs
   CreateModifyBeneficiaryBankAccount: 
+    type: object
     required: 
       - number
       - currency
@@ -1302,6 +1395,7 @@ definitions:
         type: string 
         example: Passport
   CustomerIdentityDocument: 
+    type: object
     required: 
       - id 
       - documentNumber
@@ -1391,3 +1485,36 @@ definitions:
       birthCity: 
         type: "number"  
         example: 12341234
+  SendTransferRequest: 
+    required: 
+      - "beneficiaryID"
+      - "destinationId"
+      - "paymentMethodId"
+      - "destinationCountry"
+      - "srcCountry"
+    properties: 
+      beneficiaryID: 
+        type: "number"
+      destinationId: 
+        type: "number"
+      bankAccountId: 
+        type: "number"
+      messageForBeneficiary: 
+        type: "string"
+      paymentMethodId: 
+        type: "number"
+      destinationCountry: 
+        type: "string"
+      srcCountry: 
+        type: "string"
+      srcAmount: 
+        type: "number"
+      destAmount: 
+        type: "number"
+      transferPurposeId: 
+        type: "number"
+      additionalFields: 
+        type: "array"
+        items: 
+         $ref: '#/definitions/GenericAdditionalField'
+  
