@@ -135,7 +135,7 @@ paths:
       operationId: GetPayoutMethods
       parameters: 
         - name: destinationCountry
-          in: path
+          in: query
           type: string
           required: true
       tags: 
