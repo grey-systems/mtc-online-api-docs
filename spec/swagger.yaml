@@ -1,13 +1,54 @@
 swagger: '2.0'
 info:
-  description: "REST API for integrating client applications with the GreySystems Pushmoney MTC (Money Transfer Customer) platform.\n\n You can find more about GreySystems and Pushmoney Platform at [http://www.greysystems.eu](http://www.greysystems.eu)"
   version: "2.5.0"
-  title: "Money Transfer Customer Online API"
-  termsOfService: "http://www.greysystems.eu/terms/"
+  title: "Money Transfer Customer Online REST API"
   contact:
     email: "developers@greysystems.eu"
   license:
-    name: "All Rights reserved"
+    name: GreySystems
+    url:  https://www.greysystems.eu/terms/
+  termsOfService: https://www.rebilly.com/terms/
+  x-logo: 
+    url: http://www.greysystems.eu/wp-content/uploads/2017/07/logo-Grey-menu.png
+    background: "#FFFFFF"
+  description: |
+    # Introduction
+    The Money Transfer Customer Online (aka MTC) REST API is built on HTTP. Our API is RESTFul. It has predictable
+    resource URLs.  It returns HTTP response codes to indicate errors.  It also
+    accepts and returns JSON in the HTTP body.  You can use your favorite
+    HTTP/REST library for your programming language to use MTC's APIs. 
+    
+    The API is offered as SaaS platform, that is a software licensing and delivery model in which software is licensed on a subscription basis and is centrally hosted
+    
+    # Who we are? 
+    
+    Grey Systems is a well establish European IT Consulting company that specialises in working with financial institutions. 
+
+    During the last years, we have developed "Push Money"​, a next level technology platform to provide instant online multichannel money transfer services and other financial services and products, outside of conventional banking channels.
+    
+    Our clients are international MTO's and MNO's that demand solid Fintech expertise for their business operations.
+    
+    Grey Systems is the best professional IT answer to real time remittance companies.
+    
+    
+    # Goal 
+    
+    The goal of the API is provide an API for customers to interact with the MTC Systems. This means that the API is intended to by used directly by customers, so all the operations assume that a customer is logged in the system, and will provide information based on that assumption. 
+    
+    This means that there is no possibility through this MTC Online REST API to query for information at other leven than the customer level, for instance, this API does not offer any method to provide reporting for all customers within a `PartnerSystem`. Please contact GreySystems teams for additional API  
+  
+    
+    # Authentication
+    
+    All MTC APIs, including this one, use [OpenId Connect](http://openid.net) protocol to authenticate users. 
+    
+    To authenticate your customers agains MTC system, please ask GreySystems for detailed information about the `OpenId` configuration of your account. 
+    
+    Once you have access to our `OpenId` authorization server, you will have the possibility of using any `OpenId` client library to get a [JWT](https://jwt.io) token that need to be set on every HTTP call to the API in the header `Authorization` of the request as `Authorization: bearer {the jwt access token}`
+    
+    
+    
+  
 tags: 
   - name: "beneficiaries"
     description: "Manage beneficiaries of a customer"
