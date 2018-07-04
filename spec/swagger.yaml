@@ -383,6 +383,8 @@ paths:
               $ref: '#/definitions/TransferPayer'
   /transfer/catalog/payoutDestinations: 
     get: 
+      tags: 
+        - transfer-catalogs
       summary: gets payout destinations 
       description: returns the list of available destination for a destination country, using an specific payout method, payout currency and payer. 
       operationId: GetDestinations
