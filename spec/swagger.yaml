@@ -1562,6 +1562,7 @@ definitions:
         type: "number"  
         example: 12341234
   SendTransferRequest: 
+    type: object
     required: 
       - "beneficiaryID"
       - "destinationId"
