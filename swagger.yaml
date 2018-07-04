@@ -71,6 +71,82 @@ tags:
     description: Transfer related useful catalogs for sending money (countries available, currencies, payment methods, etc..)
   
 paths:
+  /transfer-payment/{idTransfer}/cancel:
+    post: 
+      tags: 
+        - transfer-payments
+      summary: Cancels a transfer due to a failure in the payment
+      description: |
+          This operation must be used when a payment gateway returns an invalid payment response. 
+          
+          
+          **Be sure that the payment gateway response determines that the payment cannot be retried, as this operation is definitive. Once a trasnfer is cancelled cannot be un-cancelled. **
+      parameters: 
+        - name: request
+          in: body
+          required: true
+          schema: 
+            $ref: '#/definitions/TransferPaymentCancellationRequest'
+          
+        - name: idTransfer
+          in: path
+          required: true
+          type: integer
+      responses: 
+        204: 
+          description: transfer is cancelled
+        404: 
+          description: idTransfer does not exists
+        409: 
+          description: the transfer identified by idTransfer was already marked as payment-confirmed, cannot be cancelled due to a payment failure
+  /transfer-payment/{idTransfer}/confirm:
+    post: 
+      tags: 
+        - transfer-payments
+      summary: Confirms the payment of a transfer
+      description: |
+          This operation must be used when a payment gateway returns an valid (authorised) payment response. 
+          
+          
+          **Once this operation is called, the transfer can be paid inmeditaly in those destinations with online payment **
+      parameters: 
+        - name: idTransfer
+          in: path
+          required: true
+          type: integer
+        - name: request
+          in: body
+          required: true
+          schema: 
+            $ref: '#/definitions/TransferPaymentConfirmationRequest'
+      responses: 
+        204: 
+          description: transfer's payment is confirmed
+        404: 
+          description: idTransfer does not exists
+        409: 
+          description: the transfer identified by idTransfer was already cancelled, so it cannot be marked as confirmed.
+          
+  /transfer-payment/{idTransfer}:
+    post: 
+      tags: 
+        - transfer-payments
+      summary: gets the payment information of a transfer
+      description: |
+          It returns the registered payment information of a transfer
+      parameters: 
+        - name: idTransfer
+          in: path
+          required: true
+          type: integer
+      responses: 
+        200: 
+          description: transfer's payment information
+          schema: 
+            $ref: '#/definitions/TransferPayment'
+        404: 
+          description: idTransfer does not exists
+      
   /me:
     get:
       summary: Get Customer Account
@@ -1517,4 +1593,45 @@ definitions:
         type: "array"
         items: 
          $ref: '#/definitions/GenericAdditionalField'
+  TransferPaymentCancellationRequest: 
+    type: object
+    properties: 
+      paymentId: 
+        type: string 
+        description: The payment gateway id of the payment (if provided)
+      paymentMessage: 
+        type: string 
+        description: A message returned by the payment gateway as reason of the cancellation
+  TransferPaymentConfirmationRequest: 
+    type: object
+    properties: 
+      paymentId: 
+        type: string 
+        description: The payment gateway id of the payment (if provided)
+      authCode: 
+        type: string
+        description: Gateway's auth code (required), if your payment provider does not assign your payment an auth code insert here the same paymentId or any other info. This will be helpful to identify a transfer by some identificator of the payment gateway
+      paymentMessage: 
+        type: string 
+        description: A message returned by the payment gateway as reason of the cancellation
+  TransferPayment: 
+    type: object
+    properties: 
+      methodId: 
+        type: "number"
+      status: 
+        type: "string"
+      authCode: 
+        type: "string"
+      message: 
+        type: "string"
+      paymentId: 
+        type: "string"
+
+
+      
+      
+        
+      
+    
   
