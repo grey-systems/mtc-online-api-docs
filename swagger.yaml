@@ -1,28 +1,188 @@
 swagger: '2.0'
 info:
-  description: "REST API for integrating client applications with the GreySystems Pushmoney MTC (Money Transfer Customer) platform.\n\n You can find more about GreySystems and Pushmoney Platform at [http://www.greysystems.eu](http://www.greysystems.eu)"
-  version: "2.5.0"
-  title: "Money Transfer Customer Online API"
-  termsOfService: "http://www.greysystems.eu/terms/"
+  version: "2.0.0"
+  title: "Money Transfer Customer Online REST API"
   contact:
     email: "developers@greysystems.eu"
   license:
-    name: "All Rights reserved"
+    name: GreySystems
+    url:  https://www.greysystems.eu/terms/
+  termsOfService: https://www.greysystems.eu/terms
+  x-logo: 
+    url: http://www.greysystems.eu/wp-content/uploads/2017/07/logo-Grey-menu.png
+    background: "#FFFFFF"
+  description: |
+    # Introduction
+    The Money Transfer Customer Online (aka MTC) REST API is built on HTTP. Our API is RESTFul. It has predictable
+    resource URLs.  It returns HTTP response codes to indicate errors.  It also
+    accepts and returns JSON in the HTTP body.  You can use your favorite
+    HTTP/REST library for your programming language to use MTC's APIs. 
+    
+    The API is offered as SaaS platform, that is a software licensing and delivery model in which software is licensed on a subscription basis and is centrally hosted
+    
+    # Who we are? 
+    
+    Grey Systems is a well establish European IT Consulting company that specialises in working with financial institutions. 
+
+    During the last years, we have developed "Push Money"​, a next level technology platform to provide instant online multichannel money transfer services and other financial services and products, outside of conventional banking channels.
+    
+    Our clients are international MTO's and MNO's that demand solid Fintech expertise for their business operations.
+    
+    Grey Systems is the best professional IT answer to real time remittance companies.
+    
+    
+    # Goal 
+    
+    The goal of the API is provide an API for customers to interact with the MTC Systems. This means that the API is intended to by used directly by customers, so all the operations assume that a customer is logged in the system, and will provide information based on that assumption. 
+    
+    This means that there is no possibility through this MTC Online REST API to query for information at other leven than the customer level, for instance, this API does not offer any method to provide reporting for all customers within a `PartnerSystem`. Please contact GreySystems teams for additional API  
+  
+    
+    # Authentication
+    
+    All MTC APIs, including this one, use [OpenId Connect](http://openid.net) protocol to authenticate users. 
+    
+    To authenticate your customers agains MTC system, please ask GreySystems for detailed information about the `OpenId` configuration of your account. 
+    
+    Once you have access to our `OpenId` authorization server, you will have the possibility of using any `OpenId` client library to get a [JWT](https://jwt.io) token that need to be set on every HTTP call to the API in the header `Authorization` of the request as `Authorization: bearer {the jwt access token}`
+    
+    # Common HTTP Error Responses
+    
+    The MTC Rest API uses the following common HTTP status codes to communicate general issues or errors to the clients: 
+    
+    * HTTP  **401** (Non authorized): The token provided is expired, inexistent or non-valid
+    * HTTP **403** (Forbidden): The customer is not allowed to perform the call
+    * HTTP **400** (Invalid Request): The request provided is invalid (request is not well formed, a mandatory field is not provided, etc..). 
+    * HTTP **500** (Internal Server Error): Some internal component has failed to process your request. Please notify about this error to GreySystems team. 
+    
+    
 tags: 
-  - name: "beneficiaries"
-    description: "Manage beneficiaries of a customer"
   - name: "transfers"
     description: "Manage transfers of a customer"
-  - name: "transfer-catalogs"
-    description: Transfer related useful catalogs for sending money (countries available, currencies, payment methods, etc..)
+  - name: "account"
+    description: "Manages the account of a customer"
+  - name: "beneficiaries"
+    description: "Manage beneficiaries of a customer"
   - name: "transfer-payments"
     description: Transfer payment related operations to manage the payments of the transfers
   - name: "data-catalogs"
     description: Informational data, cities, data catalogs for selectors, enums etc..
+  - name: "transfer-catalogs"
+    description: Transfer related useful catalogs for sending money (countries available, currencies, payment methods, etc..)
+  
 paths:
+  /me:
+    get:
+      summary: Get Customer Account
+      description: Gets all the basic information of the customer logged in
+      tags: 
+        - account
+      responses: 
+        200: 
+          description: customer information
+          schema: 
+           $ref: '#/definitions/CustomerAccount'
+    post: 
+      summary: Modifies Customer Account 
+      tags: 
+        - account
+      responses: 
+        204: 
+          description: customer account modified correctly (no content is returned)
+        400: 
+          description: invalid request, specific error can be found on body response
+          schema: 
+            $ref: '#/definitions/Error'
+  /me/iddoc: 
+    get: 
+      summary: Gets customer identity documents
+      tags: 
+        - account
+      responses: 
+        200: 
+          description: Returns list of documents assigned to user, empty array if no documents are found 
+          schema: 
+            type: array
+            items: 
+              $ref: '#/definitions/CustomerIdentityDocument'
+    post: 
+      summary: Creates new customer identity document
+      tags: 
+        - account 
+      responses: 
+        201: 
+          description: Document successfully created
+          schema: 
+            $ref: '#/definitions/CreateEntityResponse'
+        400: 
+          description: Invalid request
+          schema: 
+            $ref: '#/definitions/Error'
+  /me/iddoc/{iddocument}: 
+    get: 
+      summary: Gets a single customer identity document
+      tags: 
+        - account 
+      parameters: 
+        - name: iddocument
+          in: path
+          required: true
+          type: number
+      responses: 
+        200: 
+          description: Document information 
+          schema: 
+            $ref: '#/definitions/CustomerIdentityDocument'
+        404: 
+          description: iddocument has not been found
+          schema: 
+            $ref: '#/definitions/Error'
+    put: 
+      summary: Modify an existent customer identity document
+      tags: 
+        - account 
+      parameters: 
+        - name: iddocument
+          in: path
+          required: true
+          type: number
+        - name: document
+          in: body
+          required: true
+          schema: 
+            $ref: '#/definitions/CustomerIdentityDocument'
+      responses: 
+        204: 
+          description: Document modified correctly (no content response)
+        400: 
+          description: Invalid request
+          schema: 
+            $ref: '#/definitions/Error'
+  /me/iddoc/{iddocument}/file:
+    get: 
+      tags:
+        - account
+      produces: 
+        - text/plain
+      summary: gets the image of a document
+      description: gets the image of a document as data-uri base64 encoded
+      parameters: 
+        - name: iddocument
+          in: path
+          required: true
+          type: number
+      responses: 
+        200: 
+          description: image found
+          schema: 
+            type: file 
+            example: data:image/x-png;base64,iVBORw0KGgoAAAANSUhEUgAAAf ....
+        404: 
+          description: No image found for the iddocument provided
+            
   /transfer/calculate: 
     post: 
-      summary: calculates how much a transfer costs for a customer
+      summary: calculator
       description: The use of the calculator is required to calculate how much a transfer does it cost for a customer, the final exchange rate applied to the operation, fees, extra comissions, discounts,  taxes, etc... </br> </br> The calculator allows 2 modes of calculation <br> <strong>Source Amount</strong> (request.sourceValue \> 0) -> The customer wants to know how much the beneficiary will receive and how must fees will be charged using a source amount <br><strong>Destination Amount</strong> (request.destinationValue \> 0) -> The customer wants to know how much he needs to send so that the beneficiary receives an specific destination amount <br><br> To determine the mode of the calculator just provide a sourceValue \> 0 or destinationValue \<0, but note that if both amounts are provided and are greater than 0, the calculator will raise an HTTP 400 error indicating that only one of them should be provided. 
       tags: 
         - transfers 
@@ -45,7 +205,6 @@ paths:
           description: Limits exceeded. At this point, the calculate avoids the calculation if some single limit is exceeded. Note that accumulated limits for customers and other customer-related limits and compliance rules are not checked
           schema: 
             $ref: '#/definitions/Error'
-          
   /transfer/catalog/sendingPurpose: 
     get: 
       summary: Returns the list of available sending purposes for sending transfers
@@ -59,7 +218,6 @@ paths:
             type: array
             items: 
               $ref: '#/definitions/TransferSendingReason'
-              
   /transfer/catalog/sourceCountries: 
     get: 
       summary: Get Source Countries
@@ -127,7 +285,6 @@ paths:
             type: array
             items: 
               $ref: '#/definitions/TransferPaymentMethod'
-              
   /transfer/catalog/payoutMethods: 
     get: 
       summary: Gets payout Methods
@@ -135,7 +292,7 @@ paths:
       operationId: GetPayoutMethods
       parameters: 
         - name: destinationCountry
-          in: path
+          in: query
           type: string
           required: true
       tags: 
@@ -253,7 +410,6 @@ paths:
             type: array
             items: 
               $ref: '#/definitions/Currency'
-                  
   /data/currency/{iso}:
     get: 
       summary: Gets a single currency using the isocode of the currency
@@ -275,7 +431,6 @@ paths:
           description: currency not found 
           schema: 
             $ref: '#/definitions/Error'
-                
   /data/country/{countryIso3}/city:
     get: 
       summary: Search cities of the specified country
@@ -322,7 +477,6 @@ paths:
             $ref: '#/definitions/ComplianceErrorResponse'
         400: 
           description: the send request is invalid, message contains the specific error
-        
   /transfer/{id}: 
     get: 
       summary: Get a transfer by its id
@@ -344,7 +498,6 @@ paths:
           description: Error response if no transfer has been found using the id provided as request parameter
           schema: 
             $ref: '#/definitions/Error'
-          
   /transfer/search: 
     post: 
       summary: Search transfers
@@ -364,7 +517,6 @@ paths:
             type: array
             items: 
               $ref: '#/definitions/TransferSearchResponse'
-            
   /beneficiary:
     get:
       summary: List all beneficiaries 
@@ -430,9 +582,6 @@ paths:
           description: The beneficiaryID does not exists or does not belong to the current customer logged in
           schema: 
             $ref: '#/definitions/Error'
-              
-        
-            
   /beneficiary/{beneficiaryId}/bankAccount:
     get:
       summary: List all saved bank accounts for a beneficiary 
@@ -483,7 +632,6 @@ paths:
           description: The request is invalid. Message of response will contain the specific error.
           schema: 
             $ref: '#/definitions/Error'
-            
   /beneficiary/{beneficiaryId}/bankAccount/{bankAccountId}:
     get: 
       summary: Gets a beneficiary bank account 
@@ -540,8 +688,6 @@ paths:
           description: The request is invalid. Message of response will contain the specific error.
           schema: 
             $ref: '#/definitions/Error'
-  
-            
   /beneficiary/data/relationship: 
     get: 
       summary: Returns the list of available customer relationships for beneficiaries
@@ -555,7 +701,6 @@ paths:
             type: array
             items: 
               $ref: '#/definitions/CustomerRelationship'
-          
 definitions:
   Beneficiary:       
     required:         
@@ -810,7 +955,8 @@ definitions:
             type: "string"
             example: "string"
           gender: 
-            type: "string"
+            type: string
+            enum: [Male, Female]
             example: "Male"
           telephone1: 
             type: "string"
@@ -1140,3 +1286,108 @@ definitions:
       name: 
         type: "string"
         example: "Family Support"
+  IdentityDocumentType: 
+    required: 
+      - id 
+      - code
+      - description
+    properties: 
+      id: 
+        type: number
+        example: 1234124
+      code: 
+        type: string 
+        example: PASS
+      description: 
+        type: string 
+        example: Passport
+  CustomerIdentityDocument: 
+    required: 
+      - id 
+      - documentNumber
+    properties: 
+      id: 
+        type: "number"
+        example: 2563938
+      documentNumber: 
+        type: "string"
+        example: "5549302P"
+      type: 
+        type: "number"
+        example: 6
+        description: id of the document type
+      expiryDate: 
+        type: "string"
+        example: "2017-09-30T23:59:59+02:00"
+      country: 
+        type: "number"
+        example: 724
+      hasImage: 
+        type: "boolean"
+        example: true
+      deliveryAuthority: 
+        type: "string"
+        example: "State"
+  CustomerAccount: 
+    required: 
+      - "id"
+      - "code"
+      - "firstName"
+      - "lastName"
+      - "telephone1"
+    properties: 
+      id: 
+        type: "number"
+        example: 57060
+      address: 
+        type: object
+        properties: 
+          street: 
+            type: "string"
+          number: 
+            type: "number"
+          country: 
+            type: "string"
+            example: "USA"
+            description: "ISO 3166 country isocode (Alpha3)"
+          city: 
+            type: "number"
+          postalCode: 
+            type: "string"
+      code: 
+        type: "string"
+        example: "57060"
+      firstName: 
+        type: "string"
+        example: "Juan"
+      lastName: 
+        type: "string"
+        example: "Sanchez Perulena"
+      birthDate: 
+        type: "string"
+        example: "1970-05-12T00:00:00+02:00"
+      gender: 
+        type: string
+        enum: [Male, Female]
+        example: "Male"
+      telephone1: 
+        type: "string"
+        example: "+34 629 21 56 01"
+      telephone2: 
+        type: "string"
+        example: "+34 629 21 56 02"
+      email: 
+        type: "string"
+        example: "test@test.es"
+      occupation: 
+        type: "string"
+        example: "IT Consultant"
+      nationality: 
+        type: "string"
+        example: "ESP"
+      birthCountry: 
+        type: "string"
+        example: "ESP"
+      birthCity: 
+        type: "number"  
+        example: 12341234
