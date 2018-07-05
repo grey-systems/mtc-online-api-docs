@@ -4,7 +4,7 @@
     "importedSpec": "swagger.yaml",
     "name": "MTC Customer Online API",
     "repo": "grey-systems/mtc-online-api-docs",
-    "splitSpec": false,
+      "splitSpec": true,
     "samples": true,
     "installSwaggerUI": true
   }

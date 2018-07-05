@@ -40,11 +40,30 @@ info:
     
     # Authentication
     
-    All MTC APIs, including this one, use [OpenId Connect](http://openid.net) protocol to authenticate users. 
+    All MTC APIs, including this one, use [OpenId Connect](http://openid.net) protocol to authenticate customers. Specifically the security used is JWT tokens. 
     
-    To authenticate your customers agains MTC system, please ask GreySystems for detailed information about the `OpenId` configuration of your account. 
+    At functional level there are 2 types of tokens: 
     
-    Once you have access to our `OpenId` authorization server, you will have the possibility of using any `OpenId` client library to get a [JWT](https://jwt.io) token that need to be set on every HTTP call to the API in the header `Authorization` of the request as `Authorization: bearer {the jwt access token}`
+    * **User Token**: Gets an  `access_token` issued on behalf of a customer (end-user), and will identity the customer itself against our API. To get a customer access_token you have to implement the [Authorization Code Flow](https://www.keycloak.org/docs/3.3/server_admin/topics/sso-protocols/oidc.html). 
+    
+  
+    
+    ![alt text](https://rograce.github.io/openid-connect-documentation/images/OIDCAuthCodeFlow.jpg "Logo Title Text 1")
+    
+    * **Service Token**: Gets an `access_token` issued to a  non end-user. Very useful for services that calls the API without an user logged in, background processes, etc... To get a Service token you have to implement the [Direct Access Grants](https://www.keycloak.org/docs/3.3/server_admin/topics/sso-protocols/oidc.html), which a REST based worflow to obtain programatically a token without user intervention. 
+    
+    **What kind of token do I have to use**? 
+    
+    * All API methods allow to use a **User Token**
+    * `TRANSFER-PAYMENT` methods allow both tokens (user one and service one). However if you call these methods with an **User Token** you will be able to manage only the transfers that belongs to the user of that token. 
+  
+    **How I use the tokens?**
+     As stated in the introduction, both tokens types are JWT tokens, and you should set that token in the HTTP `Authorization` Header of the API call in this way: 
+    
+    ```
+    Authorization: Bearer {the_token}
+    ```
+    
     
     # Common HTTP Error Responses
     
@@ -75,12 +94,12 @@ paths:
     post: 
       tags: 
         - transfer-payments
-      summary: Cancels a transfer due to a failure in the payment
+      summary: Cancels the transfer payment
       description: |
           This operation must be used when a payment gateway returns an invalid payment response. 
           
           
-          **Be sure that the payment gateway response determines that the payment cannot be retried, as this operation is definitive. Once a trasnfer is cancelled cannot be un-cancelled. **
+          **Be sure that the payment gateway response determines that the payment cannot be retried, as this operation is definitive. Once a transfer is cancelled; it cannot be un-cancelled. **
       parameters: 
         - name: request
           in: body
@@ -94,11 +113,15 @@ paths:
           type: integer
       responses: 
         204: 
-          description: transfer is cancelled
+          description: Operation successful. Transfer is cancelled.
         404: 
           description: idTransfer does not exists
+          schema: 
+            $ref: '#/definitions/Error'
         409: 
           description: the transfer identified by idTransfer was already marked as payment-confirmed, cannot be cancelled due to a payment failure
+          schema: 
+            $ref: '#/definitions/Error'
   /transfer-payment/{idTransfer}/confirm:
     post: 
       tags: 
@@ -121,7 +144,7 @@ paths:
             $ref: '#/definitions/TransferPaymentConfirmationRequest'
       responses: 
         204: 
-          description: transfer's payment is confirmed
+          description: Operation Successfull. Transfer's payment confirmed, and transfer ready to be paid at destination.
         404: 
           description: idTransfer does not exists
         409: 
@@ -131,7 +154,7 @@ paths:
     post: 
       tags: 
         - transfer-payments
-      summary: gets the payment information of a transfer
+      summary: Gets the payment of a transfer
       description: |
           It returns the registered payment information of a transfer
       parameters: 
@@ -141,7 +164,7 @@ paths:
           type: integer
       responses: 
         200: 
-          description: transfer's payment information
+          description: Operation Successful
           schema: 
             $ref: '#/definitions/TransferPayment'
         404: 
@@ -150,12 +173,12 @@ paths:
   /me:
     get:
       summary: Get Customer Account
-      description: Gets all the basic information of the customer logged in
+      description: Gets Customer data
       tags: 
         - account
       responses: 
         200: 
-          description: customer information
+          description: Operation Successful
           schema: 
            $ref: '#/definitions/CustomerAccount'
     post: 
@@ -166,17 +189,17 @@ paths:
         204: 
           description: customer account modified correctly (no content is returned)
         400: 
-          description: invalid request, specific error can be found on body response
+          description: Invalid Request. message attribute of response contains detailed information about the issue. 
           schema: 
             $ref: '#/definitions/Error'
   /me/iddoc: 
     get: 
-      summary: Gets customer identity documents
+      summary: Gets customer's identity documents data
       tags: 
         - account
       responses: 
         200: 
-          description: Returns list of documents assigned to user, empty array if no documents are found 
+          description: Operation Successful. If no documents have been found, and empty list will be returned
           schema: 
             type: array
             items: 
@@ -191,12 +214,12 @@ paths:
           schema: 
             $ref: '#/definitions/CreateEntityResponse'
         400: 
-          description: Invalid request
+          description: Invalid Request. message attribute of response contains detailed information about the issue. 
           schema: 
             $ref: '#/definitions/Error'
   /me/iddoc/{iddocument}: 
     get: 
-      summary: Gets a single customer identity document
+      summary: Gets an identity document
       tags: 
         - account 
       parameters: 
@@ -214,7 +237,7 @@ paths:
           schema: 
             $ref: '#/definitions/Error'
     put: 
-      summary: Modify an existent customer identity document
+      summary: Modify a customer identity document
       tags: 
         - account 
       parameters: 
@@ -231,7 +254,7 @@ paths:
         204: 
           description: Document modified correctly (no content response)
         400: 
-          description: Invalid request
+          description: Invalid Request. message attribute of response contains detailed information about the issue. 
           schema: 
             $ref: '#/definitions/Error'
   /me/iddoc/{iddocument}/file:
@@ -294,7 +317,7 @@ paths:
           schema: 
             $ref: "#/definitions/CalculatorResponse"
         400: 
-          description: Invalid request, message will contains the specific issue
+          description: Invalid Request. message attribute of response contains detailed information about the issue. 
           schema: 
             $ref: '#/definitions/Error'
         409: 
@@ -381,6 +404,10 @@ paths:
             type: array
             items: 
               $ref: '#/definitions/TransferPaymentMethod'
+        400: 
+          description: Invalid Request. message attribute of response contains detailed information about the issue. 
+          schema: 
+            $ref: '#/definitions/Error'
   /transfer/catalog/payoutMethods: 
     get: 
       summary: Gets payout Methods
@@ -400,6 +427,10 @@ paths:
             type: array
             items: 
               $ref: '#/definitions/TransferDeliveryMethod'
+        400: 
+          description: Invalid Request. message attribute of response contains detailed information about the issue. 
+          schema: 
+            $ref: '#/definitions/Error'
   /transfer/catalog/payoutCurrencies: 
     get: 
       summary: Gets payout Currencies
@@ -424,6 +455,10 @@ paths:
             type: array
             items: 
               $ref: '#/definitions/Currency'
+        400: 
+          description: Invalid Request. message attribute of response contains detailed information about the issue. 
+          schema: 
+            $ref: '#/definitions/Error'
   /transfer/catalog/payoutPayers: 
     get: 
       summary: Gets payout payers
@@ -459,6 +494,10 @@ paths:
             type: array
             items: 
               $ref: '#/definitions/TransferPayer'
+        400: 
+          description: Invalid Request. message attribute of response contains detailed information about the issue. 
+          schema: 
+            $ref: '#/definitions/Error'
   /transfer/catalog/payoutDestinations: 
     get: 
       tags: 
@@ -497,6 +536,10 @@ paths:
           description: list of available payers. Empty list if no destinations have been found
           schema: 
             $ref: '#/definitions/PayerDestination'
+        400: 
+          description: Invalid Request. message attribute of response contains detailed information about the issue. 
+          schema: 
+            $ref: '#/definitions/Error'
   /data/idDocType: 
     get: 
       summary: Gets the identity document types available for a customer
@@ -601,8 +644,12 @@ paths:
             type: array
             items: 
               $ref: "#/definitions/City"
+        404:
+          description: countryIso3 provided is not found
+          schema: 
+            $ref: '#/definitions/Error'
         400: 
-          description: Invalid Request, response contains the issue detected that can be that the countryIso3 is invalid and/or name query parameter is not at least 3 chars long
+          description: Invalid Request. message attribute of response contains detailed information about the issue. 
           schema: 
             $ref: '#/definitions/Error'
   /transfer: 
@@ -641,7 +688,9 @@ paths:
           schema: 
             $ref: '#/definitions/ComplianceErrorResponse'
         400: 
-          description: the send request is invalid, message contains the specific error
+          description: Invalid Request. message attribute of response contains detailed information about the issue. 
+          schema: 
+            $ref: '#/definitions/Error'
   /transfer/{id}: 
     get: 
       summary: Get a transfer by its id
@@ -660,7 +709,7 @@ paths:
           schema: 
             $ref: '#/definitions/Transfer'
         404: 
-          description: Error response if no transfer has been found using the id provided as request parameter
+          description: no transfer has been found using the id provided as request parameter
           schema: 
             $ref: '#/definitions/Error'
   /transfer/search: 
@@ -793,8 +842,8 @@ paths:
           description: The beneficiaryId does not exists or it does not belongs to the current user logged in. 
           schema: 
             $ref: '#/definitions/Error'
-        '400': 
-          description: The request is invalid. Message of response will contain the specific error.
+        400: 
+          description: Invalid Request. message attribute of response contains detailed information about the issue. 
           schema: 
             $ref: '#/definitions/Error'
   /beneficiary/{beneficiaryId}/bankAccount/{bankAccountId}:
@@ -849,8 +898,8 @@ paths:
           description: The beneficiaryId does not exists or it does not belongs to the current user logged in. 
           schema: 
             $ref: '#/definitions/Error'
-        '400': 
-          description: The request is invalid. Message of response will contain the specific error.
+        400: 
+          description: Invalid Request. message attribute of response contains detailed information about the issue. 
           schema: 
             $ref: '#/definitions/Error'
   /beneficiary/data/relationship: 
@@ -926,12 +975,14 @@ definitions:
         type: "string"
         example: "1984-04-23T00:00:43.511Z"
   CreateEntityResponse: 
+    type: object
     required: 
       - "id"
     properties: 
       id: 
         type: "number"          
   Error:
+    type: object
     required:
       - code
       - message
@@ -961,6 +1012,7 @@ definitions:
         type: "number"
         example: 25
   ExchangeRate:
+    type: object
     required: 
       - "srcCcy"
       - "destCcy"
@@ -976,6 +1028,7 @@ definitions:
         type: "number"
         example: 0.87654
   CurrencyAmount:
+    type: object
     required: 
       - "ccy"
       - "value"
@@ -1202,45 +1255,60 @@ definitions:
             $ref: '#/definitions/ExchangeRate'
         type: "object"
   Country: 
+    type: object
     properties: 
       id: 
+        description: numeric iso of the country
         type: "number"
         example: 840
       iso2: 
         type: "string"
         example: "US"
+        description: alphanumeric iso code (2-letters) of the country
       iso3: 
         type: "string"
         example: "USA"
+        description: alphanumeric iso code (3-letters) of the country
       name_en: 
         type: "string"
         example: "United States Of America"
+        description: NAme in english language of the country
       phonePrefix: 
+        description: phone prefix in use for phone calls to the country
         type: "string"
         example: "+1"
-  City:     
+  City:  
+    type: object
     properties: 
       id: 
+        description: id of the city
         type: "number"
         example: 12341234
       name_ascii: 
+        description: name of the city (using ascii characters, for english readers)
         type: "string"
         example: "London"
       name: 
+        description: name of the city (locale based). Will return non-ascii characters for those cities that are originally written using non-latin alphabet.
         type: "string"
-        example: "Us Dollar"
+        example: "London"
   Currency: 
+    type: object
     properties: 
       id: 
+        description: numeric iso of the currency
         type: "number"
         example: 840
       iso: 
+        description: alphanumeric iso code (3-letters) of the currency
         type: "string"
         example: "USD"
       name_en: 
         type: "string"
+        description: English name of the currency
         example: "Us Dollar"
-  CustomerRelationship:       
+  CustomerRelationship: 
+    type: object
     properties: 
       id: 
         type: "number"
@@ -1252,6 +1320,7 @@ definitions:
         type: "string"
         example: "Son"
   TransferPaymentMethod: 
+    type: object
     properties: 
       id: 
         type: "number"
@@ -1263,7 +1332,8 @@ definitions:
         type: "string"
         example: "OGO"
         description: "Code of the Payment Gateway used with this payment method"
-  TransferDeliveryMethod: 
+  TransferDeliveryMethod:
+    type: object
     properties: 
       code: 
         type: string
@@ -1303,6 +1373,7 @@ definitions:
         description: Amount that the customer wants to receive expressed in payoutCurrency
         
   TransferPayer: 
+    type: object
     properties: 
       id: 
         type: number
@@ -1313,6 +1384,7 @@ definitions:
       exchangeRate: 
         $ref: '#/definitions/ExchangeRate'
   CalculatorResponse: 
+    type: object
     properties: 
       SrcValue: 
         $ref: '#/definitions/CurrencyAmount'
@@ -1332,6 +1404,7 @@ definitions:
         $ref: '#/definitions/CurrencyAmount'
         
   BeneficiaryBankAccount: 
+    type: object
     properties: 
       id: 
         type: integer
@@ -1388,7 +1461,8 @@ definitions:
         type: string 
         example: USA
         description: The country to which the bank account belongs
-  ComplianceErrorResponse: 
+  ComplianceErrorResponse:
+    type: object
     properties: 
       idControl: 
         type: integer
@@ -1402,7 +1476,8 @@ definitions:
         items: 
           $ref: '#/definitions/GenericAdditionalField'
   
-  PayerDestination: 
+  PayerDestination:
+    type: object
     required: 
       - id
       - code
@@ -1435,6 +1510,10 @@ definitions:
             description: name of the city 
             example: London
   GenericAdditionalField: 
+    type: object
+    required: 
+      - key
+      - value
     properties: 
       key: 
         type: string
@@ -1444,7 +1523,8 @@ definitions:
         description: value of the field identified by key in string format (for non-string data values, ask GreySystems teams for the proper formats)
         example: Salary
         type: string
-  TransferSendingReason:       
+  TransferSendingReason: 
+    type: object
     properties: 
       id: 
         type: "number"
@@ -1455,7 +1535,8 @@ definitions:
       name: 
         type: "string"
         example: "Family Support"
-  IdentityDocumentType: 
+  IdentityDocumentType:
+    type: object
     required: 
       - id 
       - code
@@ -1479,9 +1560,11 @@ definitions:
       id: 
         type: "number"
         example: 2563938
+        description: unique identifier of the identity document, assigned by the system
       documentNumber: 
         type: "string"
         example: "5549302P"
+        description: document's number
       type: 
         type: "number"
         example: 6
@@ -1489,16 +1572,21 @@ definitions:
       expiryDate: 
         type: "string"
         example: "2017-09-30T23:59:59+02:00"
+        description: Expiration date of the identity document
       country: 
-        type: "number"
-        example: 724
+        type: "string"
+        example: ESP
+        description: country that issued the identity document
       hasImage: 
         type: "boolean"
         example: true
+        description: determines if the identity document has an image associated
       deliveryAuthority: 
         type: "string"
         example: "State"
-  CustomerAccount: 
+        description: Authority that delivered the identity document
+  CustomerAccount:
+    type: object
     required: 
       - "id"
       - "code"
@@ -1509,24 +1597,30 @@ definitions:
       id: 
         type: "number"
         example: 57060
+        description: Unique identifier of the customer in the system. Should not be shown to user
       address: 
         type: object
         properties: 
           street: 
             type: "string"
+            description: Street name 
           number: 
             type: "number"
+            description: Street number
           country: 
             type: "string"
             example: "USA"
             description: "ISO 3166 country isocode (Alpha3)"
           city: 
             type: "number"
+            description: city id of the address
           postalCode: 
             type: "string"
+            description: postal code
       code: 
         type: "string"
         example: "57060"
+        description: code of customer, this should be the code shown to the user in case if it's required
       firstName: 
         type: "string"
         example: "Juan"
@@ -1572,25 +1666,36 @@ definitions:
     properties: 
       beneficiaryID: 
         type: "number"
+        description: id of beneficiary that will receive the money
       destinationId: 
         type: "number"
+        description: Id of the destination (check getDestinations operation)
       bankAccountId: 
         type: "number"
+        description: In case the transfer is paid to a bank account, this will identity the bank account
       messageForBeneficiary: 
         type: "string"
+        description: Optional message for beneficiary
       paymentMethodId: 
         type: "number"
+        description: Id Method of payment of the transfer (check getPaymentMethods operation)
       destinationCountry: 
         type: "string"
+        description: IsoCode 3 of the destination country of the transfer
       srcCountry: 
         type: "string"
+        description: IsoCode 3 of the source country of the transfer
       srcAmount: 
         type: "number"
+        description: Source amount that the customer will send. 
       destAmount: 
         type: "number"
+        description: Destination amount that the customer wants the receiver receive.
       transferPurposeId: 
         type: "number"
+        description: id of the transfer's purpose
       additionalFields: 
+        description: Array of additional fields to be added to the transfer's sending request. 
         type: "array"
         items: 
          $ref: '#/definitions/GenericAdditionalField'
@@ -1605,6 +1710,9 @@ definitions:
         description: A message returned by the payment gateway as reason of the cancellation
   TransferPaymentConfirmationRequest: 
     type: object
+    required: 
+      - paymentId
+      - authCode
     properties: 
       paymentId: 
         type: string 
@@ -1617,22 +1725,35 @@ definitions:
         description: A message returned by the payment gateway as reason of the cancellation
   TransferPayment: 
     type: object
+    required: 
+      - methodId
+      - status
     properties: 
       methodId: 
         type: "number"
+        description: The payment method id associated with this payment
       status: 
         type: "string"
+        enum: [Confirmed, Rejected, Pending]
+        description: Status of the payment
       authCode: 
         type: "string"
+        description: Auth code of the payment. can be empty for non-confirmed payments
       message: 
         type: "string"
+        description: Message of the payment status provided by the payment gateway
       paymentId: 
         type: "string"
+        description: Payment Identificator provided by the payment gateway
 
-
-      
-      
-        
-      
+securityDefinitions:
+  JWT:
+    description: You can obtain a JSON Web Token (`access_token`), using our OpenID Connect Authorizations Server
+    type: apiKey
+    name: 'Authorization: Bearer access_token'
+    in: header
     
-  
+      
+security: 
+  - JWT: []
+        
