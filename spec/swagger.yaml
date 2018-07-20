@@ -652,6 +652,31 @@ paths:
           description: Invalid Request. message attribute of response contains detailed information about the issue. 
           schema: 
             $ref: '#/definitions/Error'
+  /data/city/{cityId}:
+    get:
+      summary: Get a single city using its id
+      operationId: SearchCity
+      tags:
+        - data-catalogs
+      parameters: 
+        - name: cityId
+          in: path
+          required: true
+          description: the id of the city
+          type: string
+      responses: 
+        200: 
+          description: Success retrieval of city
+          schema: 
+            $ref: '#/definitions/City'
+        400: 
+          description: Invalid Request. message attribute of response contains detailed information about the issue. 
+          schema: 
+            $ref: '#/definitions/Error'
+        404: 
+          description: City not found 
+          schema: 
+            $ref: '#/definitions/Error'
   /transfer: 
     post: 
       summary: Sends a transfer
