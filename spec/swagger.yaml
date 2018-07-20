@@ -666,7 +666,7 @@ paths:
           type: string
       responses: 
         200: 
-          description: success retrieval of city
+          description: Success retrieval of city
           schema: 
             $ref: '#/definitions/City'
         400: 
@@ -674,7 +674,7 @@ paths:
           schema: 
             $ref: '#/definitions/Error'
         404: 
-          description: city not found 
+          description: City not found 
           schema: 
             $ref: '#/definitions/Error'
   /transfer: 
