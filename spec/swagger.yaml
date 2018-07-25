@@ -814,6 +814,11 @@ paths:
           in: path
           required: true
           type: integer
+        - name: beneficiary
+          in: body
+          required: true
+          schema: 
+            $ref:  '#/definitions/Beneficiary'
       responses: 
         204:
           description: beneficiary has been modified, no response is returned (no content)
