@@ -88,8 +88,113 @@ tags:
     description: Informational data, cities, data catalogs for selectors, enums etc..
   - name: "transfer-catalogs"
     description: Transfer related useful catalogs for sending money (countries available, currencies, payment methods, etc..)
+  - name: "public-calculator"
+    description: Methods to be called without an user logged in, data returned is only informative.
   
 paths:
+
+  /public-calculator/{idPartner}/estimate:
+    post:
+      tags: 
+        - public-calculator
+      summary: Estimates prices
+      description: | 
+                    Estimate the prices and amounts for an specific conditions. Note that this is intented for public webpages, and no security is required.
+                    The calculator allows 2 modes of calculation <br> <strong>Source Amount</strong> (request.sourceValue \> 0) -> The customer wants to know how much the beneficiary will receive and how must fees will be charged using a source amount <br><strong>Destination Amount</strong> (request.destinationValue \> 0) -> The customer wants to know how much he needs to send so that the beneficiary receives an specific destination amount <br><br> To determine the mode of the calculator just provide a sourceValue \> 0 or destinationValue \<0, but note that if both amounts are provided and are greater than 0, the calculator will raise an HTTP 400 error indicating that only one of them should be provided.
+      parameters: 
+        - name: idPartner
+          in: path
+          required: true
+          type: integer
+          description: Value of idPartner (request to GS your value/s available)
+        - name: estimateRequest
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/EstimateRequest'
+      responses:
+        200: 
+          description: Operation Successful 
+          schema: 
+            type: array
+            items: 
+              $ref: '#/definitions/Country'
+        400: 
+          description: Invalid parameters, response contains detailed error
+          schema: 
+            $ref: '#/definitions/Error'
+            
+  /public-calculator/{idPartner}/destinationCountries:
+    get:
+      tags: 
+        - public-calculator
+      summary: Destination countries available for a partner system
+      parameters: 
+        - name: sourceCountry
+          in: query
+          required: true
+          type: string
+          description: isocode of the source country 
+        - name: idPartner
+          in: path
+          required: true
+          type: integer
+          description: partner system id, request GS for this value
+      responses:
+        200: 
+          description: Operation Successful 
+          schema: 
+            type: array
+            items: 
+              $ref: '#/definitions/Country'
+        400: 
+          description: Invalid parameters, response contains detailed error
+          schema: 
+            $ref: '#/definitions/Error'
+            
+  /public-calculator/{idPartner}/payoutPayers:
+    get:
+      tags: 
+        - public-calculator
+      summary: Gets payout payers
+      parameters: 
+        - name: idPartner
+          in: path
+          required: true
+          type: integer
+        - name: destinationCountry
+          in: query
+          type: string
+          required: true
+          description: the destination Country iso3
+        - name: sourceCountry
+          in: query
+          type: string
+          required: true
+          description: The source country iso3
+        - name: payoutMethodCode
+          in: query
+          type: string
+          required: true
+          description: The delivery method code
+        - name: payoutCurrency
+          in: query
+          type: string
+          required: true
+          description: The delivery currency
+      responses:
+        200: 
+          description: Successfull operation
+          schema: 
+            type: array
+            items: 
+              $ref: '#/definitions/TransferPayer'
+        400: 
+          description: Invalid Request. message attribute of response contains detailed information about the issue. 
+          schema: 
+            $ref: '#/definitions/Error'
+          
+    
   /transfer-payment/{idTransfer}/cancel:
     post: 
       tags: 
@@ -652,31 +757,6 @@ paths:
           description: Invalid Request. message attribute of response contains detailed information about the issue. 
           schema: 
             $ref: '#/definitions/Error'
-  /data/city/{cityId}:
-    get:
-      summary: Get a single city using its id
-      operationId: SearchCity
-      tags:
-        - data-catalogs
-      parameters: 
-        - name: cityId
-          in: path
-          required: true
-          description: the id of the city
-          type: string
-      responses: 
-        200: 
-          description: Success retrieval of city
-          schema: 
-            $ref: '#/definitions/City'
-        400: 
-          description: Invalid Request. message attribute of response contains detailed information about the issue. 
-          schema: 
-            $ref: '#/definitions/Error'
-        404: 
-          description: City not found 
-          schema: 
-            $ref: '#/definitions/Error'
   /transfer: 
     post: 
       summary: Sends a transfer
@@ -814,11 +894,6 @@ paths:
           in: path
           required: true
           type: integer
-        - name: beneficiary
-          in: body
-          required: true
-          schema: 
-            $ref:  '#/definitions/Beneficiary'
       responses: 
         204:
           description: beneficiary has been modified, no response is returned (no content)
@@ -967,12 +1042,6 @@ definitions:
       telephone2: 
         type: "string"
       address: 
-        required: 
-          - "street"
-          - "number"
-          - "country"
-          - "city"
-          - "postalCode"
         properties: 
           street: 
             type: "string"
@@ -1775,6 +1844,36 @@ definitions:
       paymentId: 
         type: "string"
         description: Payment Identificator provided by the payment gateway
+  EstimateRequest: 
+    type: object
+    properties: 
+      sourceCurrency: 
+        type: string
+        description: iso3 code of source currency
+        example: EUR
+      sourceCountry: 
+        type: string 
+        description: iso3 code of the source country
+        example: ESP
+      destinationCountry: 
+        type: string 
+        description: iso3 code of the destination country
+      payoutCurrency: 
+        type: string
+        description: iso3 code of payout currency
+        example: USD
+      paymentMethodId: 
+        type: integer
+        description: id of the payment method
+      payerId: 
+        type: integer
+        description: id of the payer
+      sourceValue: 
+        type: number 
+        description: Amount that the customer wants send (net amount) expressed in sourceCurrency
+      destinationValue: 
+        type: number 
+        description: Amount that the customer wants to receive expressed in payoutCurrency
 
 securityDefinitions:
   JWT:
