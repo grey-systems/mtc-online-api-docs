@@ -98,6 +98,7 @@ paths:
       tags: 
         - public-calculator
       summary: Estimates prices
+      security: []
       description: | 
                     Estimate the prices and amounts for an specific conditions. Note that this is intented for public webpages, and no security is required.
                     The calculator allows 2 modes of calculation <br> <strong>Source Amount</strong> (request.sourceValue \> 0) -> The customer wants to know how much the beneficiary will receive and how must fees will be charged using a source amount <br><strong>Destination Amount</strong> (request.destinationValue \> 0) -> The customer wants to know how much he needs to send so that the beneficiary receives an specific destination amount <br><br> To determine the mode of the calculator just provide a sourceValue \> 0 or destinationValue \<0, but note that if both amounts are provided and are greater than 0, the calculator will raise an HTTP 400 error indicating that only one of them should be provided.
@@ -129,6 +130,7 @@ paths:
       tags: 
         - public-calculator
       summary: Destination countries available for a partner system
+      security: []
       parameters: 
         - name: sourceCountry
           in: query
@@ -157,6 +159,7 @@ paths:
       tags: 
         - public-calculator
       summary: Gets payout payers
+      security: []
       parameters: 
         - name: idPartner
           in: path
