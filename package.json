@@ -13,7 +13,7 @@
     "shelljs": "^0.7.0",
     "swagger-repo": "^1.0.0",
     "swagger-ui": "^2.1.4",
-    "mime": "mime ~> 1.4.1"
+    "mime": "1.4.1"
   },
   "private": true,
   "scripts": {
