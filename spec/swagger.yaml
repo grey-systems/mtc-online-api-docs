@@ -289,10 +289,16 @@ paths:
           description: Operation Successful
           schema: 
            $ref: '#/definitions/CustomerAccount'
-    post: 
+    put: 
       summary: Modifies Customer Account 
       tags: 
         - account
+      parameters: 
+        - name: account 
+          required: true
+          in: body
+          schema: 
+            $ref: '#/definitions/CustomerAccount'
       responses: 
         204: 
           description: customer account modified correctly (no content is returned)
@@ -316,6 +322,12 @@ paths:
       summary: Creates new customer identity document
       tags: 
         - account 
+      parameters: 
+        - name: document
+          in: body
+          required: true
+          schema: 
+            $ref: '#/definitions/CustomerIdentityDocument'
       responses: 
         201: 
           description: Document successfully created
