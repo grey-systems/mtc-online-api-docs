@@ -1815,6 +1815,8 @@ definitions:
          $ref: '#/definitions/GenericAdditionalField'
   TransferPaymentCancellationRequest: 
     type: object
+    required: 
+      - paymentMessage
     properties: 
       paymentId: 
         type: string 
@@ -1826,7 +1828,7 @@ definitions:
     type: object
     required: 
       - paymentId
-      - authCode
+      - authCode      
     properties: 
       paymentId: 
         type: string 
