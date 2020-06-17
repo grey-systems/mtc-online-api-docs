@@ -69,7 +69,7 @@ info:
     
     The MTC Rest API uses the following common HTTP status codes to communicate general issues or errors to the clients: 
     
-    * HTTP  **401** (Non authorized): The token provided is expired, inexistent or non-valid
+    * HTTP **401** (Non authorized): The token provided is expired, inexistent or non-valid
     * HTTP **403** (Forbidden): The customer is not allowed to perform the call
     * HTTP **400** (Invalid Request): The request provided is invalid (request is not well formed, a mandatory field is not provided, etc..). 
     * HTTP **500** (Internal Server Error): Some internal component has failed to process your request. Please notify about this error to GreySystems team. 
@@ -77,17 +77,19 @@ info:
     
 tags: 
   - name: "transfers"
-    description: "Manage transfers of a customer"
+    description: Manage transfers of a customer.
+  - name: "rewards-and-discounts"
+    description: Reward points related operations to manage the balance and use of points.
   - name: "account"
-    description: "Manages the account of a customer"
+    description: Manages the account of a customer.
   - name: "beneficiaries"
-    description: "Manage beneficiaries of a customer"
+    description: Manage beneficiaries of a customer.
   - name: "transfer-payments"
-    description: Transfer payment related operations to manage the payments of the transfers
+    description: Transfer payment related operations to manage the payments of the transfers.
   - name: "data-catalogs"
-    description: Informational data, cities, data catalogs for selectors, enums etc..
+    description: Informational data, cities, data catalogs for selectors, enums, etc...
   - name: "transfer-catalogs"
-    description: Transfer related useful catalogs for sending money (countries available, currencies, payment methods, etc..)
+    description: Transfer related useful catalogs for sending money (countries available, currencies, payment methods, etc...)
   - name: "public-calculator"
     description: Methods to be called without an user logged in, data returned is only informative.
   
@@ -421,7 +423,7 @@ paths:
           
   /transfer/calculate: 
     post: 
-      summary: calculator
+      summary: Calculator
       description: The use of the calculator is required to calculate how much a transfer does it cost for a customer, the final exchange rate applied to the operation, fees, extra comissions, discounts,  taxes, etc... </br> </br> The calculator allows 2 modes of calculation <br> <strong>Source Amount</strong> (request.sourceValue \> 0) -> The customer wants to know how much the beneficiary will receive and how must fees will be charged using a source amount <br><strong>Destination Amount</strong> (request.destinationValue \> 0) -> The customer wants to know how much he needs to send so that the beneficiary receives an specific destination amount <br><br> To determine the mode of the calculator just provide a sourceValue \> 0 or destinationValue \<0, but note that if both amounts are provided and are greater than 0, the calculator will raise an HTTP 400 error indicating that only one of them should be provided. 
       tags: 
         - transfers 
@@ -1035,6 +1037,57 @@ paths:
             type: array
             items: 
               $ref: '#/definitions/CustomerRelationship'
+
+  /rewards/account:
+    get:
+      summary: Get rewards account info
+      description: Gets customer reward points account data, returns balance and minimun threshold to redeem points for discounts or donations <br><br> Note that if no point operation has occurred, the points account does not exist yet, the request will raise an HTTP 404 error indicating that reward account does not exist.
+      tags:
+        - rewards-and-discounts
+      responses:
+        200:
+          description: Successfull operation
+          schema:
+            $ref: "#/definitions/RewardsAccount"
+        404:
+          description: Account does not exist. At this point, no point operation has occurred and the points account does not exist yet
+          schema:
+            $ref: '#/definitions/Error'
+  /rewards/account/{accountId}/movements:
+    get:
+      summary: Get rewards account movements
+      description: It will retrieve all the customer reward points operations and movements. If the customer does not have any points account movement saved, an empty list will be returned.
+      tags:
+        - rewards-and-discounts
+      parameters:
+        - name: accountId
+          type: integer
+          in: path
+          required: true
+          description: account id
+        - name: page
+          type: integer
+          in: query
+          required: true
+          description: requested page number. Starts at 0
+        - name: pageSize
+          type: integer
+          in: query
+          required: true
+          description: number of elements per page
+      responses:
+        200:
+          description: An array containing the results (paginated) or empty array if no results have been found
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/RewardsMovement'
+        404:
+          description: The account provided does not exists or does not belong to the customer logged in
+          schema:
+            $ref: '#/definitions/Error'
+
+
 definitions:
   Beneficiary:   
     type: object
@@ -1928,14 +1981,67 @@ definitions:
         type: number 
         description: Amount that the customer wants to receive expressed in payoutCurrency
 
+  RewardsAccount:
+    type: object
+    properties: 
+      id: 
+        type: integer
+        description: id of the account
+        example: 2
+      number: 
+        type: string 
+        description: alphanumeric code of the account
+        example: RE-361493
+      description: 
+        type: string 
+        description: account description
+        example: Reward Account
+      balance: 
+        type: number
+        description: amount of points on the account
+        example: 25.5
+      pointThresholdExpense: 
+        type: number 
+        description: minimun amount of points to redeem for discounts or donations
+        example: 10.0
+  RewardsMovement:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: id of the movement
+        example: 41
+      credit:
+        type: number
+        description: amount added to balance
+        example: 15.5
+      debit:
+        type: number
+        description: amount subtracted from balance
+        example: 0.0
+      date:
+        type: string
+        description: date of the operation
+        example: "2020-01-28T12:47:33.744+01:00"
+      description:
+        type: string
+        description: movement description
+        example: Test
+      owner:
+        type: string
+        description: type and id of the operation that triggers the operation
+        example: mtc://transfer/sending/567413
+      resultingBalance:
+        type: number
+        description: amount of points on the account
+        example: 40.5
+
 securityDefinitions:
   JWT:
     description: You can obtain a JSON Web Token (`access_token`), using our OpenID Connect Authorizations Server
     type: apiKey
     name: 'Authorization: Bearer access_token'
     in: header
-    
-      
+
 security: 
   - JWT: []
-        
