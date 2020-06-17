@@ -17,9 +17,9 @@
 
 ### Install
 
-1.  Install [Node JS](https://nodejs.org/)
+1.  Install [Node JS](https://nodejs.org/) v10.x.x (or use a version manager for NodeJS like [NVM](https://github.com/nvm-sh/nvm))
 2.  Clone repo and `cd`
-    - Run `npm install`
+    - Run `npm install` (or `npm ci` if prefer a clean install, without update `package-lock.json` dependencies)
 
 ### Usage
 
