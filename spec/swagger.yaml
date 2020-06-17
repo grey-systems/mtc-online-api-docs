@@ -1153,6 +1153,25 @@ definitions:
       value: 
         type: "number"
         example: 300.56
+  PromoCode:
+    type: object
+    required: 
+      - "discountApplied"
+      - "isPromoApplied"
+      - "code"
+      - "message"
+    properties:
+      discountApplied:
+        $ref: '#/definitions/CurrencyAmount'
+      isPromoApplied:
+        type: "boolean"
+        example: true
+      code:
+        type: "string"
+        example: "41950914-cf43-466b-ado1-13451b38"
+      message:
+        type: "string"
+        example: "Test"
   TransferSearchResponse:
     properties: 
       id: 
@@ -1485,6 +1504,13 @@ definitions:
       destinationValue: 
         type: number 
         description: Amount that the customer wants to receive expressed in payoutCurrency
+      payoutOption:
+        type: string
+        description: Code of selected payout method of available for the destination country
+      promoCode:
+        type: string
+        description: Code of discount provided to apply on fees calculation 
+
         
   TransferPayer: 
     type: object
@@ -1505,17 +1531,21 @@ definitions:
       DestValue: 
         $ref: '#/definitions/CurrencyAmount'
       rate: 
-         $ref: '#/definitions/ExchangeRate'
+        $ref: '#/definitions/ExchangeRate'
       fees: 
-         $ref: '#/definitions/CurrencyAmount'
+        $ref: '#/definitions/CurrencyAmount'
       discount: 
         $ref: '#/definitions/CurrencyAmount'
       totalToPay: 
         $ref: '#/definitions/CurrencyAmount'
       paymentMethodCost: 
-       $ref: '#/definitions/CurrencyAmount'
-      taxes: 
         $ref: '#/definitions/CurrencyAmount'
+      taxes:
+        $ref: '#/definitions/CurrencyAmount'
+      promoCodeList:
+        type: array
+        items:
+          $ref: '#/definitions/PromoCode'
         
   BeneficiaryBankAccount: 
     type: object
@@ -1777,6 +1807,7 @@ definitions:
       - "paymentMethodId"
       - "destinationCountry"
       - "srcCountry"
+      - "transferPurposeId"
     properties: 
       beneficiaryID: 
         type: "number"
@@ -1790,28 +1821,33 @@ definitions:
       messageForBeneficiary: 
         type: "string"
         description: Optional message for beneficiary
-      paymentMethodId: 
+      paymentMethodId:
         type: "number"
         description: Id Method of payment of the transfer (check getPaymentMethods operation)
-      destinationCountry: 
+      destinationCountry:
         type: "string"
         description: IsoCode 3 of the destination country of the transfer
-      srcCountry: 
+      srcCountry:
         type: "string"
         description: IsoCode 3 of the source country of the transfer
-      srcAmount: 
+      srcAmount:
         type: "number"
-        description: Source amount that the customer will send. 
-      destAmount: 
+        description: Source amount that the customer will send.
+      destAmount:
         type: "number"
         description: Destination amount that the customer wants the receiver receive.
-      transferPurposeId: 
+      promoCodeList:
+        description: List of discount codes applied to the transfer.
+        type: "array"
+        items:
+         type: "string"
+      transferPurposeId:
         type: "number"
         description: id of the transfer's purpose
-      additionalFields: 
-        description: Array of additional fields to be added to the transfer's sending request. 
+      additionalFields:
+        description: Array of additional fields to be added to the transfer's sending request.
         type: "array"
-        items: 
+        items:
          $ref: '#/definitions/GenericAdditionalField'
   TransferPaymentCancellationRequest: 
     type: object
