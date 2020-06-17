@@ -9,11 +9,12 @@
     "gulp": "^3.9.1",
     "gulp-connect": "^4.2.0",
     "gulp-util": "^3.0.7",
+    "mime": "1.4.1",
+    "natives": "^1.1.6",
     "portfinder": "^1.0.3",
     "shelljs": "^0.7.0",
     "swagger-repo": "^1.0.0",
-    "swagger-ui": "^2.1.4",
-    "mime": "1.4.1"
+    "swagger-ui": "^2.1.4"
   },
   "private": true,
   "scripts": {
