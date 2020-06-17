@@ -1,6 +1,6 @@
 swagger: '2.0'
 info:
-  version: "2.0.0"
+  version: "2.1.0"
   title: "Money Transfer Customer Online REST API"
   contact:
     email: "developers@greysystems.eu"
