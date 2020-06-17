@@ -78,7 +78,7 @@ info:
 tags: 
   - name: "transfers"
     description: Manage transfers of a customer.
-  - name: "rewards-and-discounts"
+  - name: "reward-and-discount"
     description: Reward points related operations to manage the balance and use of points.
   - name: "account"
     description: Manages the account of a customer.
@@ -1043,7 +1043,7 @@ paths:
       summary: Get rewards account info
       description: Gets customer reward points account data, returns balance and minimun threshold to redeem points for discounts or donations <br><br> Note that if no point operation has occurred, the points account does not exist yet, the request will raise an HTTP 404 error indicating that reward account does not exist.
       tags:
-        - rewards-and-discounts
+        - reward-and-discount
       responses:
         200:
           description: Successfull operation
@@ -1058,7 +1058,7 @@ paths:
       summary: Get rewards account movements
       description: It will retrieve all the customer reward points operations and movements. If the customer does not have any points account movement saved, an empty list will be returned.
       tags:
-        - rewards-and-discounts
+        - reward-and-discount
       parameters:
         - name: accountId
           type: integer
@@ -1086,7 +1086,60 @@ paths:
           description: The account provided does not exists or does not belong to the customer logged in
           schema:
             $ref: '#/definitions/Error'
-
+  /rewards/rates/{payoutCurrency}:
+    get:
+      summary: Get rewards points rate
+      description: |
+        It will retrieve the reward points exchange rate offered for the requested currency.
+        <br> Received rate is the result of currency/points (Example: 1 USD / 2 Points = 0.5 rate)
+      tags:
+        - reward-and-discount
+      parameters:
+        - name: payoutCurrency
+          type: string
+          in: path
+          required: true
+          description: alphanumeric iso code (3-letters) of the payout currency
+        - name: country
+          type: string
+          in: query
+          required: true
+          description: alphanumeric iso code (3-letters) of the source country
+      responses:
+        200:
+          description: An array containing the results (paginated) or empty array if no results have been found
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/RewardsRate'
+        400:
+          description: Invalid Request. message attribute of response contains detailed information about the issue.
+          schema:
+            $ref: '#/definitions/Error'
+  /rewards/discount:
+    post:
+      summary: Creates a discount code
+      description: |
+        Creates a personal discount code to apply on transfer fees redeeming points from the reward points account balance.
+        <br> The number of points must be bigger than the account minimum points threshold and less than its equivalency to total transfer fees.
+        <br> The retrieved code can be used on Calculator to apply the discount.
+      tags:
+        - reward-and-discount
+      parameters:
+        - name: create discountCode request parameters
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/DiscountCodeRequest'
+      responses:
+        200:
+          description: Successfull operation
+          schema:
+            $ref: "#/definitions/DiscountCodeResponse"
+        400:
+          description: Invalid Request. message attribute of response contains detailed information about the issue.
+          schema:
+            $ref: '#/definitions/Error'
 
 definitions:
   Beneficiary:   
@@ -1562,7 +1615,7 @@ definitions:
         description: Code of selected payout method of available for the destination country
       promoCode:
         type: string
-        description: Code of discount provided to apply on fees calculation 
+        description: Discount code provided to apply on fees calculation
 
         
   TransferPayer: 
@@ -2035,6 +2088,49 @@ definitions:
         type: number
         description: amount of points on the account
         example: 40.5
+  RewardsRate:
+    type: object
+    properties:
+      srcCountry:
+        type: string
+        description: alphanumeric iso code (3-letters) of the source country
+        example: SWE
+      currency:
+        type: string
+        description: alphanumeric iso code (3-letters) of the payout currency
+        example: EUR
+      value:
+        type: number
+        description: exchange rate of payoutCurrency/points
+        example: 0.5
+  DiscountCodeRequest:
+    type: object
+    required:
+      - currency
+      - srcCountry
+      - points
+    properties:
+      currency:
+        type: string
+        description: alphanumeric iso code (3-letters) of the payout currency
+        example: SWE
+      srcCountry:
+        type: string
+        description: alphanumeric iso code (3-letters) of the source country
+        example: EUR
+      points:
+        type: number
+        description: amount of points to redeem on the transfer fees discount code
+        example: 22.2
+  DiscountCodeResponse:
+    type: object
+    required:
+      - promoCode
+    properties:
+      promoCode:
+        type: string
+        description: discount code provided to apply on calculator
+        example: 41950914-cf43-466b-ado1-13451b38
 
 securityDefinitions:
   JWT:
