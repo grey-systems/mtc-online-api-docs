@@ -1,6 +1,6 @@
 swagger: '2.0'
 info:
-  version: "2.1.0"
+  version: "2.1.1"
   title: "Money Transfer Customer Online REST API"
   contact:
     email: "developers@greysystems.eu"
@@ -198,8 +198,35 @@ paths:
           description: Invalid Request. message attribute of response contains detailed information about the issue. 
           schema: 
             $ref: '#/definitions/Error'
-          
-    
+
+  /public-calculator/{idPartner}/payoutMethods:
+    get:
+      tags:
+        - public-calculator
+      summary: Gets payout methods
+      security: []
+      parameters:
+        - name: idPartner
+          in: path
+          required: true
+          type: integer
+        - name: destinationCountry
+          in: query
+          type: string
+          required: true
+          description: the destination Country iso3
+      responses:
+        200:
+          description: Successfull operation
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/TransferDeliveryMethod'
+        400:
+          description: Invalid Request. message attribute of response contains detailed information about the issue.
+          schema:
+            $ref: '#/definitions/Error'
+
   /transfer-payment/{idTransfer}/cancel:
     post: 
       tags: 
