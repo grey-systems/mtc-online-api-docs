@@ -1348,6 +1348,21 @@ definitions:
           bankAgency: 
             type: "string"
             example: "Asdfasdfasdf"
+          branchName: 
+            type: "string"
+            example: "Branch name (for Cash Operation)"
+          branchAddress: 
+            type: "string"
+            example: "Branch Address (for Cash Operation)"
+          branchCountry: 
+            type: "string"
+            example: "Branch country"
+          branchCity: 
+            type: "string"
+            example: "Branch City (for Cash Operation)"
+          destinationPayOutOption: 
+            type: "string"
+            example: "BA"
         type: "object"
       paymentInfo: 
         properties: 
@@ -1504,6 +1519,21 @@ definitions:
           bankAgency: 
             type: "string"
             example: "Asdfasdfasdf"
+          branchName: 
+            type: "string"
+            example: "Branch name (for Cash Operation)"
+          branchAddress: 
+            type: "string"
+            example: "Branch Address (for Cash Operation)"
+          branchCountry: 
+            type: "string"
+            example: "Branch country"
+          branchCity: 
+            type: "string"
+            example: "Branch City (for Cash Operation)"
+          destinationPayOutOption: 
+            type: "string"
+            example: "BA"
         type: "object"
       financialData: 
         properties: 
