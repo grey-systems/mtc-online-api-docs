@@ -1,0 +1,1142 @@
+swagger: '2.0'
+info:
+  description: "REST API for integrating client applications with the GreySystems Pushmoney MTC (Money Transfer Customer) platform.\n\n You can find more about GreySystems and Pushmoney Platform at [http://www.greysystems.eu](http://www.greysystems.eu)"
+  version: "2.5.0"
+  title: "Money Transfer Customer Online API"
+  termsOfService: "http://www.greysystems.eu/terms/"
+  contact:
+    email: "developers@greysystems.eu"
+  license:
+    name: "All Rights reserved"
+tags: 
+  - name: "beneficiaries"
+    description: "Manage beneficiaries of a customer"
+  - name: "transfers"
+    description: "Manage transfers of a customer"
+  - name: "transfer-catalogs"
+    description: Transfer related useful catalogs for sending money (countries available, currencies, payment methods, etc..)
+  - name: "transfer-payments"
+    description: Transfer payment related operations to manage the payments of the transfers
+  - name: "data-catalogs"
+    description: Informational data, cities, data catalogs for selectors, enums etc..
+paths:
+  /transfer/calculate: 
+    post: 
+      summary: calculates how much a transfer costs for a customer
+      description: The use of the calculator is required to calculate how much a transfer does it cost for a customer, the final exchange rate applied to the operation, fees, extra comissions, discounts,  taxes, etc... </br> </br> The calculator allows 2 modes of calculation <br> <strong>Source Amount</strong> (request.sourceValue \> 0) -> The customer wants to know how much the beneficiary will receive and how must fees will be charged using a source amount <br><strong>Destination Amount</strong> (request.destinationValue \> 0) -> The customer wants to know how much he needs to send so that the beneficiary receives an specific destination amount <br><br> To determine the mode of the calculator just provide a sourceValue \> 0 or destinationValue \<0, but note that if both amounts are provided and are greater than 0, the calculator will raise an HTTP 400 error indicating that only one of them should be provided. 
+      tags: 
+        - transfers 
+      parameters: 
+        - name: calculatorRequest
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/CalculatorRequest'
+      responses: 
+        200: 
+          description: calculation has been successfull
+          schema: 
+            $ref: "#/definitions/CalculatorResponse"
+        400: 
+          description: Invalid request, message will contains the specific issue
+          schema: 
+            $ref: '#/definitions/Error'
+        409: 
+          description: Limits exceeded. At this point, the calculate avoids the calculation if some single limit is exceeded. Note that accumulated limits for customers and other customer-related limits and compliance rules are not checked
+          schema: 
+            $ref: '#/definitions/Error'
+          
+  /transfer/catalog/sendingPurpose: 
+    get: 
+      summary: Returns the list of available sending purposes for sending transfers
+      operationId: GetTransferSendingPurposes
+      tags: 
+        - transfer-catalogs
+      responses:
+        200: 
+          description: Successfull operation
+          schema: 
+            type: array
+            items: 
+              $ref: '#/definitions/TransferSendingReason'
+              
+  /transfer/catalog/sourceCountries: 
+    get: 
+      summary: Get Source Countries
+      description: Returns the list of available source countries for the logged in customer to send money from
+      operationId: GetSourceCountries
+      tags: 
+        - transfer-catalogs
+      responses:
+        200: 
+          description: Successfull operation
+          schema: 
+            type: array
+            items: 
+              $ref: '#/definitions/Country'
+  /transfer/catalog/sourceCurrency: 
+    get: 
+      summary: Gets source currencies
+      description: Returns the list of available source currencies for the logged in customer to send money  from the source country specified in the path
+      operationId: GetSourceCurrencies
+      parameters: 
+        - name: sourceCountry
+          in: query
+          type: string
+          required: true
+          description: isocode 3 of the source country
+      tags: 
+        - transfer-catalogs
+      responses:
+        200: 
+          description: Successfull operation
+          schema: 
+            type: array
+            items: 
+              $ref: '#/definitions/Currency'
+  /transfer/catalog/destinationCountry: 
+    get: 
+      summary: Gets Available destination countries
+      description: Returns the list of available payment methods to pay a transfer (bank account, credit card, etc...).
+      operationId: GetDestinationCountries
+      parameters: 
+        - name: sourceCountry
+          in: query
+          type: string
+          required: true
+      tags: 
+        - transfer-catalogs
+      responses:
+        200: 
+          description: Successfull operation
+          schema: 
+            type: array
+            items: 
+              $ref: '#/definitions/Country'
+  /transfer/catalog/paymentMethods: 
+    get: 
+      summary: Gets payment Methods
+      description: Returns the list of available payment methods to pay a transfer (bank account, credit card, etc...).
+      operationId: GetPaymentMethods
+      tags: 
+        - transfer-catalogs
+      responses:
+        200: 
+          description: Successfull operation
+          schema: 
+            type: array
+            items: 
+              $ref: '#/definitions/TransferPaymentMethod'
+              
+  /transfer/catalog/payoutMethods: 
+    get: 
+      summary: Gets payout Methods
+      description: Returns the list of available payout methods for a destination country
+      operationId: GetPayoutMethods
+      parameters: 
+        - name: destinationCountry
+          in: query
+          type: string
+          required: true
+      tags: 
+        - transfer-catalogs
+      responses:
+        200: 
+          description: Successfull operation
+          schema: 
+            type: array
+            items: 
+              $ref: '#/definitions/TransferDeliveryMethod'
+  /transfer/catalog/payoutCurrencies: 
+    get: 
+      summary: Gets payout Currencies
+      description:  Returns the list of available delivery currencies for a payout method within a payout destination country
+      operationId: GetPayoutCurrencies
+      parameters: 
+        - name: destinationCountry
+          in: query
+          type: string
+          required: true
+        - name: payoutMethodCode
+          in: query
+          type: string
+          required: true
+          description: The payout method code
+      tags: 
+        - transfer-catalogs
+      responses:
+        200: 
+          description: Successfull operation
+          schema: 
+            type: array
+            items: 
+              $ref: '#/definitions/Currency'
+  /transfer/catalog/payoutPayers: 
+    get: 
+      summary: Gets payout payers
+      description: Returns the list of available delivery Payers for a destination country, using an specific payout method and a payout currency. Also it returns the rate offered by the destination payer for that conditions
+      operationId: GetDeliveryPayers
+      parameters: 
+        - name: destinationCountry
+          in: query
+          type: string
+          required: true
+          description: the destination Country iso3
+        - name: sourceCountry
+          in: query
+          type: string
+          required: true
+          description: The source country iso3
+        - name: payoutMethodCode
+          in: query
+          type: string
+          required: true
+          description: The delivery method code
+        - name: payoutCurrency
+          in: query
+          type: string
+          required: true
+          description: The delivery currency
+      tags: 
+        - transfer-catalogs
+      responses:
+        200: 
+          description: Successfull operation
+          schema: 
+            type: array
+            items: 
+              $ref: '#/definitions/TransferPayer'
+  /data/country:
+    get: 
+      summary: Get the entire list of countries and its associated data
+      operationId: getCountries
+      tags: 
+        - data-catalogs
+      responses:
+        200: 
+          description: List of all the countries of the world
+          schema: 
+            type: array
+            items: 
+              $ref: '#/definitions/Country'
+  /data/country/{iso3}:
+    get: 
+      summary: Gets a single country using the isocode of the country
+      operationId: getCountryById
+      tags: 
+        - data-catalogs
+      parameters: 
+        - name: iso3
+          in: path
+          required: true
+          description: the isocode alpha 3 of the country
+          type: string
+      responses: 
+        200: 
+          description: success retrieval of country
+          schema: 
+            $ref: '#/definitions/Country' 
+        404: 
+          description: country not found 
+          schema: 
+            $ref: '#/definitions/Error'
+  /data/currency:
+    get: 
+      summary: Get the entire list of currencies and its associated data
+      operationId: getCurrencies
+      tags: 
+        - data-catalogs
+      responses:
+        200: 
+          description: List of all the currencies available 
+          schema: 
+            type: array
+            items: 
+              $ref: '#/definitions/Currency'
+                  
+  /data/currency/{iso}:
+    get: 
+      summary: Gets a single currency using the isocode of the currency
+      operationId: getCurrencyByIso
+      tags: 
+        - data-catalogs
+      parameters: 
+        - name: iso
+          in: path
+          required: true
+          description: the isocode identifier of the currency
+          type: string
+      responses: 
+        200: 
+          description: success retrieval of country
+          schema: 
+            $ref: '#/definitions/Currency'
+        404: 
+          description: currency not found 
+          schema: 
+            $ref: '#/definitions/Error'
+                
+  /data/country/{countryIso3}/city:
+    get: 
+      summary: Search cities of the specified country
+      operationId: SearchCities
+      tags: 
+        - data-catalogs
+      parameters: 
+        - name: countryIso3
+          in: path
+          required: true
+          description: the isocode identifier of the currency
+          type: string
+        - name: name
+          in: query
+          required: true
+          description: search term to look for cities within country specifiec by countryIso3 parameter. Min-length of value should be 3
+          type: string
+      responses:
+        200: 
+          description: Success, array of cities, or empty array if none have been found
+          schema: 
+            type: array
+            items: 
+              $ref: "#/definitions/City"
+        400: 
+          description: Invalid Request, response contains the issue detected that can be that the countryIso3 is invalid and/or name query parameter is not at least 3 chars long
+          schema: 
+            $ref: '#/definitions/Error'
+  /transfer: 
+    post: 
+      summary: Sends a transfer
+      description: Operation to send a transfer to the system. The mandatory information of the request can be found in the SendTransferRequest data scheme. However please take into account that depending on the configuration requested to GreySystems, additional fields can be marked as mandatory, and thus the system can reject a transfer if some mandatory fields are not provided (as 400 HTTP error). <br><br> Compliance Considerations<br><br> When some compliance rule is broken, an HTTP 409 (Conflict) error is returned with information about what specific rule has been broken , and additional information of the broken rule, so that the customer can ammend the transfer (if possible) to then send money. <br><br> Send operation is 100% stateless, this means that you as a caller, can retry the operation after ammend it, and the system will only store the transfer just in case all compliance rules are valid.  
+      operationId: sendTransfer
+      tags: 
+        - transfers
+      responses: 
+        201:
+          description: The transfer has been properly sent. Internal id of the transfer just sent is returned. This is the id you have to use to query all the data of transfer, to perform payment related operations etc... Is it important to note that this id should not be shown to users, its purpose is technical and identifies uniquely a transfer within the system at technical level.
+          schema: 
+            $ref: '#/definitions/CreateEntityResponse'
+        409: 
+          description: A compliance rule has been broken
+          schema: 
+            $ref: '#/definitions/ComplianceErrorResponse'
+        400: 
+          description: the send request is invalid, message contains the specific error
+        
+  /transfer/{id}: 
+    get: 
+      summary: Get a transfer by its id
+      operationId: getTransfer
+      tags: 
+        - transfers
+      parameters: 
+        - name: id
+          in: path
+          required: true
+          description: The id of the transfer
+          type: integer
+      responses:
+        200: 
+          description: The transfer object if found and belongs to the current user logged
+          schema: 
+            $ref: '#/definitions/Transfer'
+        404: 
+          description: Error response if no transfer has been found using the id provided as request parameter
+          schema: 
+            $ref: '#/definitions/Error'
+          
+  /transfer/search: 
+    post: 
+      summary: Search transfers
+      operationId: searchTransfers
+      tags:
+        - transfers
+      parameters: 
+        - name: search request parameters
+          in: body
+          required: true
+          schema: 
+            $ref: '#/definitions/SearchTransferRequest'
+      responses:
+        200: 
+          description: An array containing the results (paginated) or empty array if no results have been found
+          schema: 
+            type: array
+            items: 
+              $ref: '#/definitions/TransferSearchResponse'
+            
+  /beneficiary:
+    get:
+      summary: List all beneficiaries 
+      operationId: listBeneficiaries
+      tags:
+        - beneficiaries
+      responses:
+        '200':
+          description: An array with all the beneficiaries of the customer
+          schema:
+            type: array
+            items: 
+              $ref: "#/definitions/Beneficiary"
+    post:
+      summary: Create a beneficiary 
+      operationId: createBeneficiary
+      description: firstName, lastName and telephone1 are mandatory. id property is ignored in case it's provided
+      tags:
+        - beneficiaries
+      parameters: 
+        - name: beneficiary
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Beneficiary'
+      responses:
+        '201':
+          description: Beneficiary created successfully, with the id generated by the system that unique identifies the beneficiary
+          schema: 
+            $ref: "#/definitions/CreateEntityResponse"
+  /beneficiary/{beneficiaryId}:
+    get: 
+      summary: gets a beneficiary
+      description: returns an specific benefiary 
+      tags: 
+        - beneficiaries
+      parameters: 
+        - name: beneficiaryId
+          in: path
+          required: true
+          type: integer
+      responses: 
+        200: 
+          description: Valid beneficiaryID, response contains the beneficiary info
+          schema: 
+            $ref: '#/definitions/Beneficiary'
+        404: 
+          description: The beneficiaryId does not exists or does not belong to the current customer logged in
+    put: 
+      summary: Modifies a beneficiary
+      description: Modifies an existent beneficiary 
+      tags: 
+        - beneficiaries
+      parameters: 
+        - name: beneficiaryId
+          in: path
+          required: true
+          type: integer
+      responses: 
+        204:
+          description: beneficiary has been modified, no response is returned (no content)
+        404: 
+          description: The beneficiaryID does not exists or does not belong to the current customer logged in
+          schema: 
+            $ref: '#/definitions/Error'
+              
+        
+            
+  /beneficiary/{beneficiaryId}/bankAccount:
+    get:
+      summary: List all saved bank accounts for a beneficiary 
+      description: It will retrieve all the accounts saved for a beneficiary. If the beneficiary does not have any bank account saved, an empty list will be returned. <br><br> Note that the 404 result is reserved for the case that a beneficiaryId does not exists, while returning an empty array means that the beneficiaryId is valid but he has not saved any account yet.
+      operationId: listBeneficiaryBankAccounts
+      tags:
+        - beneficiaries
+      parameters: 
+        - name: beneficiaryId
+          type: integer
+          in: path
+          required: true
+      responses:
+        404: 
+          description: The beneficiary provided does not exists or does not belong to the customer logged in.
+        '200':
+          description: An array with all the bank accounts of the beneficiary
+          schema:
+            type: array
+            items: 
+              $ref: "#/definitions/BeneficiaryBankAccount"
+    post:
+      summary: Create a beneficiary bank account
+      operationId: createBeneficiaryBankAccount
+      description: Creates a beneficiary bank account for an specific beneficiary. <br><br> Note that this operation always create a bankAccount
+      tags:
+        - beneficiaries
+      parameters: 
+        - name: beneficiaryId
+          type: integer
+          in: path
+          required: true
+        - name: bankAccount
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateModifyBeneficiaryBankAccount'
+      responses:
+        '201':
+          description: BankAccount have been created. The id of the created bank account is returned
+          schema: 
+            $ref: "#/definitions/CreateEntityResponse"
+        '404': 
+          description: The beneficiaryId does not exists or it does not belongs to the current user logged in. 
+          schema: 
+            $ref: '#/definitions/Error'
+        '400': 
+          description: The request is invalid. Message of response will contain the specific error.
+          schema: 
+            $ref: '#/definitions/Error'
+            
+  /beneficiary/{beneficiaryId}/bankAccount/{bankAccountId}:
+    get: 
+      summary: Gets a beneficiary bank account 
+      operationId: getBeneficiaryBankAccount
+      description: Gets an specific (existent) beneficiary bank account using its id
+      tags: 
+        - beneficiaries
+      parameters: 
+        - name: beneficiaryId
+          type: integer
+          in: path
+          required: true
+        - name: bankAccountId
+          type: integer
+          in: path
+          required: true
+      responses: 
+        200: 
+          description: Returns the beneficiary bank account id 
+          schema: 
+            $ref: '#/definitions/BeneficiaryBankAccount'
+        404: 
+          description: Beneficiary bank account not found or BeneficiaryId does not belong to current user logged in
+          schema: 
+            $ref: '#/definitions/Error'
+    put: 
+      summary: Modifies a beneficiary bank account
+      operationId: modifyBeneficiaryBankAccount
+      description: Modifies an already created beneficiary bank account for an specific beneficiary. <br><br> 
+      tags:
+        - beneficiaries
+      parameters: 
+        - name: beneficiaryId
+          type: integer
+          in: path
+          required: true
+        - name: bankAccountId
+          type: integer
+          in: path
+          required: true
+        - name: bankAccount
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateModifyBeneficiaryBankAccount'
+      responses:
+        '204':
+          description: Bank account modified. No content is returned as response
+        '404': 
+          description: The beneficiaryId does not exists or it does not belongs to the current user logged in. 
+          schema: 
+            $ref: '#/definitions/Error'
+        '400': 
+          description: The request is invalid. Message of response will contain the specific error.
+          schema: 
+            $ref: '#/definitions/Error'
+  
+            
+  /beneficiary/data/relationship: 
+    get: 
+      summary: Returns the list of available customer relationships for beneficiaries
+      operationId: GetTransferRelationships
+      tags: 
+        - beneficiaries
+      responses:
+        200: 
+          description: Successfull operation
+          schema: 
+            type: array
+            items: 
+              $ref: '#/definitions/CustomerRelationship'
+          
+definitions:
+  Beneficiary:       
+    required:         
+      - "firstName"
+      - "lastName"       
+      - "telephone1"        
+    properties: 
+      id: 
+        type: "number"
+      firstName: 
+        type: "string"
+      lastName: 
+        type: "string"
+      gender: 
+        type: "string"
+        enum: [Male, Female]
+      telephone1: 
+        type: "string"
+      telephone2: 
+        type: "string"
+      address: 
+        required: 
+          - "street"
+          - "number"
+          - "country"
+          - "city"
+          - "postalCode"
+        properties: 
+          street: 
+            type: "string"
+          number: 
+            type: "number"
+          country: 
+            type: "string"
+            example: "USA"
+            description: "ISO 3166 country isocode (Alpha3)"
+          city: 
+            type: "number"
+          postalCode: 
+            type: "string"
+        type: "object"
+      senderRelationshipId: 
+        type: "number"
+      occupation: 
+        type: "string"
+      nationality: 
+        type: "string"
+        example: "USA"
+        description: "ISO 3166 country isocode (Alpha3)"
+      birthCity: 
+        type: number
+        example: 1234
+      email: 
+        type: "string"
+        example: "email@test.com"
+      birthdate: 
+        type: "string"
+        example: "1984-04-23T00:00:43.511Z"
+  CreateEntityResponse: 
+    required: 
+      - "id"
+    properties: 
+      id: 
+        type: "number"          
+  Error:
+    required:
+      - code
+      - message
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+  SearchTransferRequest:       
+    required: 
+      - "dateFrom"
+      - "dateTo"
+      - "page"
+      - "rowsPerPage"
+    properties: 
+      dateFrom: 
+        type: "string"
+        example: "2016-04-23T00:00:43.511Z"
+      dateTo: 
+        type: "string"
+        example: "2016-04-24T00:00:00.511Z"
+      page: 
+        type: "number"
+        example: 0
+      rowsPerPage: 
+        type: "number"
+        example: 25
+  ExchangeRate:
+    required: 
+      - "srcCcy"
+      - "destCcy"
+      - "value"
+    properties: 
+      srcCcy: 
+        type: "string"
+        example: "EUR"
+      destCcy: 
+        type: "string"
+        example: "USD"
+      value: 
+        type: "number"
+        example: 0.87654
+  CurrencyAmount:
+    required: 
+      - "ccy"
+      - "value"
+    properties: 
+      ccy: 
+        type: "string"
+        example: "EUR"
+      value: 
+        type: "number"
+        example: 300.56
+  TransferSearchResponse:
+    properties: 
+      id: 
+        type: "number"
+        example: 571418
+      operationDate: 
+        type: "string"
+        example: "2018-01-10T16:21:23.173+01:00"
+      transactionCode: 
+        type: "string"
+        example: "QWER123412341234"
+      urn: 
+        type: "string"
+        example: "888823"
+      status: 
+        type: "string"
+        example: "Registered"
+      blocked: 
+        type: "boolean"
+        example: true
+      beneficiaryFirstName: 
+        type: "string"
+        example: "Michael"
+      beneficiaryLastName: 
+        type: "string"
+        example: "Test"
+      destination: 
+        properties: 
+          destinationName: 
+            type: "string"
+            example: "Bank Deposit France"
+          destinationCode: 
+            type: "string"
+            example: "1234$1234"
+          payerName: 
+            type: "string"
+            example: "Money Partner Destination"
+          bankAccount: 
+            type: "string"
+            example: "1234123412341234"
+          bankAgency: 
+            type: "string"
+            example: "Asdfasdfasdf"
+        type: "object"
+      paymentInfo: 
+        properties: 
+          idPaymentGateway: 
+            type: "number"
+            example: 1
+          paymentMethod: 
+            type: "string"
+            example: "CreditCard"
+          paymentFinished: 
+            type: "boolean"
+            example: false
+          authCode: 
+            type: "string"
+            example: "12341234"
+        type: "object"
+      financialData: 
+        properties: 
+          sendAmount: 
+              $ref: '#/definitions/CurrencyAmount'
+          receiveAmount: 
+            $ref: '#/definitions/CurrencyAmount'
+          fees: 
+            $ref: '#/definitions/CurrencyAmount'
+          taxes: 
+            $ref: '#/definitions/CurrencyAmount'
+          totalPaidByCustomer: 
+            $ref: '#/definitions/CurrencyAmount'
+          rateApplied: 
+            $ref: '#/definitions/ExchangeRate'
+        type: "object"
+  Transfer:
+    required: 
+      - "id"
+      - "operationDate"
+      - "transactionCode"
+      - "urn"
+      - "status"
+      - "blocked"
+      - "idBeneficiary"
+      - "beneficiaryTransferData"
+      - "destination"
+      - "financialData"
+    properties: 
+      id: 
+        type: "number"
+        example: 571418
+      operationDate: 
+        type: "string"
+        example: "2018-01-10T16:21:23.173+01:00"
+      transactionCode: 
+        type: "string"
+        example: "QWER123412341234"
+      urn: 
+        type: "string"
+        example: "888823"
+      status: 
+        type: "string"
+        example: "Registered"
+        enum: 
+         - Registered
+         - Delivered
+         - Cancelled
+      blocked: 
+        type: "boolean"
+        example: true
+      paymentInfo: 
+        properties: 
+          idPaymentGateway: 
+            type: "number"
+            example: 1
+          paymentMethod: 
+            type: "string"
+            example: "CreditCard"
+          paymentFinished: 
+            type: "boolean"
+            example: false
+          authCode: 
+            type: "string"
+            example: "12341234"
+        type: "object"
+      idBeneficiary: 
+        type: "number"
+        example: 57062
+      beneficiaryTransferData: 
+        properties: 
+          firstName: 
+            type: "string"
+            example: "string"
+          lastName: 
+            type: "string"
+            example: "string"
+          gender: 
+            type: "string"
+            example: "Male"
+          telephone1: 
+            type: "string"
+            example: "string"
+          telephone2: 
+            type: "string"
+            example: "string"
+          address: 
+            properties: 
+              street: 
+                type: "string"
+                example: "string"
+              number: 
+                type: "number"
+                example: 0
+              country: 
+                type: "string"
+                example: "USA"
+              city: 
+                type: "number"
+                example: 0
+              postalCode: 
+                type: "string"
+                example: "string"
+            type: "object"
+          senderRelationshipId: 
+            type: "number"
+            example: 0
+          occupation: 
+            type: "string"
+            example: "string"
+          nationality: 
+            type: "string"
+            example: "USA"
+          birthCity: 
+            type: "number"
+            example: 1234
+          email: 
+            type: "string"
+            example: "email@test.com"
+          birthdate: 
+            type: "string"
+            example: "1984-04-23T00:00:43.511Z"
+        type: "object"
+      destination: 
+        properties: 
+          destinationName: 
+            type: "string"
+            example: "Bank Deposit France"
+          destinationCode: 
+            type: "string"
+            example: "1234$1234"
+          payerName: 
+            type: "string"
+            example: "Money Partner Destination"
+          bankAccount: 
+            type: "string"
+            example: "1234123412341234"
+          bankAgency: 
+            type: "string"
+            example: "Asdfasdfasdf"
+        type: "object"
+      financialData: 
+        properties: 
+          sendAmount: 
+              $ref: '#/definitions/CurrencyAmount'
+          receiveAmount: 
+            $ref: '#/definitions/CurrencyAmount'
+          fees: 
+            $ref: '#/definitions/CurrencyAmount'
+          taxes: 
+            $ref: '#/definitions/CurrencyAmount'
+          totalPaidByCustomer: 
+            $ref: '#/definitions/CurrencyAmount'
+          rateApplied: 
+            $ref: '#/definitions/ExchangeRate'
+        type: "object"
+  Country: 
+    properties: 
+      id: 
+        type: "number"
+        example: 840
+      iso2: 
+        type: "string"
+        example: "US"
+      iso3: 
+        type: "string"
+        example: "USA"
+      name_en: 
+        type: "string"
+        example: "United States Of America"
+      phonePrefix: 
+        type: "string"
+        example: "+1"
+  City:     
+    properties: 
+      id: 
+        type: "number"
+        example: 12341234
+      name_ascii: 
+        type: "string"
+        example: "London"
+      name: 
+        type: "string"
+        example: "Us Dollar"
+  Currency: 
+    properties: 
+      id: 
+        type: "number"
+        example: 840
+      iso: 
+        type: "string"
+        example: "USD"
+      name_en: 
+        type: "string"
+        example: "Us Dollar"
+  CustomerRelationship:       
+    properties: 
+      id: 
+        type: "number"
+        example: 1
+      code: 
+        type: "string"
+        example: "23"
+      name: 
+        type: "string"
+        example: "Son"
+  TransferPaymentMethod: 
+    properties: 
+      id: 
+        type: "number"
+        example: 12
+      name: 
+        type: "string"
+        example: "Debit Card"
+      gateway: 
+        type: "string"
+        example: "OGO"
+        description: "Code of the Payment Gateway used with this payment method"
+  TransferDeliveryMethod: 
+    properties: 
+      code: 
+        type: string
+        example: BA
+      description: 
+        type: string
+        example: Bank Account Deposit
+  CalculatorRequest: 
+    properties: 
+      sourceCurrency: 
+        type: string
+        description: iso3 code of source currency
+        example: EUR
+      sourceCountry: 
+        type: string 
+        description: iso3 code of the source country
+        example: ESP
+      destinationCountry: 
+        type: string 
+        description: iso3 code of the destination country
+      payoutCurrency: 
+        type: string
+        description: iso3 code of payout currency
+        example: USD
+      paymentMethodId: 
+        type: integer
+        description: id of the payment method
+      payerId: 
+        type: integer
+        description: id of the payer
+      sourceValue: 
+        type: number 
+        description: Amount that the customer wants send (net amount) expressed in sourceCurrency
+      destinationValue: 
+        type: number 
+        description: Amount that the customer wants to receive expressed in payoutCurrency
+        
+  TransferPayer: 
+    properties: 
+      id: 
+        type: number
+        example: 1234134
+      name: 
+        type: string
+        example: DPR - Destination Payer 
+      exchangeRate: 
+        $ref: '#/definitions/ExchangeRate'
+  CalculatorResponse: 
+    properties: 
+      SrcValue: 
+        $ref: '#/definitions/CurrencyAmount'
+      DestValue: 
+        $ref: '#/definitions/CurrencyAmount'
+      rate: 
+         $ref: '#/definitions/ExchangeRate'
+      fees: 
+         $ref: '#/definitions/CurrencyAmount'
+      discount: 
+        $ref: '#/definitions/CurrencyAmount'
+      totalToPay: 
+        $ref: '#/definitions/CurrencyAmount'
+      paymentMethodCost: 
+       $ref: '#/definitions/CurrencyAmount'
+      taxes: 
+        $ref: '#/definitions/CurrencyAmount'
+        
+  BeneficiaryBankAccount: 
+    properties: 
+      id: 
+        type: integer
+        example: 12341234
+      number: 
+        type: string
+        example: 1234-1234-1234-1234
+        description: The bank account number
+      branchName: 
+        type: string
+        example: Office XX
+        description: The bank account 
+      bankCode: 
+        type: string
+        example: 12341234
+        description: Code bank is the code of what our system calls Destination (See model  PayerDestination)
+      bankName: 
+        type: string 
+        example: Bank of Credit USA
+        description: Bank Name that belongs to bankCode
+      currency: 
+        type: string 
+        example: USD
+        description: The currency of the bank account
+      country: 
+        type: string 
+        example: USA
+        description: The country to which the bank account belongs
+  CreateModifyBeneficiaryBankAccount: 
+    required: 
+      - number
+      - currency
+      - country
+      - codeBank
+    properties: 
+      number: 
+        type: string
+        example: 1234-1234-1234-1234
+        description: The bank account number
+      branchName: 
+        type: string
+        example: Office XX
+        description: The bank account 
+      codeBank: 
+        type: string
+        example: 12341234
+        description: Code bank is the code of what our system calls Destination (See model  PayerDestination)
+      currency: 
+        type: string 
+        example: USD
+        description: The currency of the bank account
+      country: 
+        type: string 
+        example: USA
+        description: The country to which the bank account belongs
+  ComplianceErrorResponse: 
+    properties: 
+      idControl: 
+        type: integer
+        description: The id of the compliance control that has rejected the operation. For a full list of ids returned, please contact GreySystems teams, as these values will depend on specific configurations.
+      message: 
+        type: string 
+        description: Message (english) returned for this control 
+      additionalDetails:
+        type: array
+        description: List of additional info in case some control request more information
+        items: 
+          $ref: '#/definitions/GenericAdditionalField'
+  
+  PayerDestination: 
+    required: 
+      - id
+      - code
+      - name
+    properties: 
+      id: 
+        type: string 
+        description: id of the destination. Note that catalogs can be rebuilt so this id can change over time for the same logical destination. If you need to store the destination in a 3rd party system, please use the code
+        example: 12341234234
+      code: 
+        type: string 
+        description: code of the destination
+        example: 12$1234
+      name: 
+        description: name of the destination
+        example: SBB - Bank of America
+      address: 
+        type: string
+        description: Address of the destination (Street, number, letter). Optional
+        example: Street X, 423
+      city: 
+        description: City of the destination (optional) destinations
+        properties: 
+          id: 
+            type: integer
+            description: id of the city
+            example: 12341
+          name: 
+            type: string 
+            description: name of the city 
+            example: London
+  GenericAdditionalField: 
+    properties: 
+      key: 
+        type: string
+        description: key of the additional field
+        example: SOURCE_FUNDS
+      value: 
+        description: value of the field identified by key in string format (for non-string data values, ask GreySystems teams for the proper formats)
+        example: Salary
+        type: string
+  TransferSendingReason:       
+    properties: 
+      id: 
+        type: "number"
+        example: 1
+      code: 
+        type: "string"
+        example: "3"
+      name: 
+        type: "string"
+        example: "Family Support"

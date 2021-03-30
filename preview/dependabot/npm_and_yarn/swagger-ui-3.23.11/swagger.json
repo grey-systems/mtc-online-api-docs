@@ -1,0 +1,2962 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "2.1.0",
+    "title": "Money Transfer Customer Online REST API",
+    "contact": {
+      "email": "developers@greysystems.eu"
+    },
+    "license": {
+      "name": "GreySystems",
+      "url": "https://www.greysystems.eu/terms/"
+    },
+    "termsOfService": "https://www.greysystems.eu/terms",
+    "x-logo": {
+      "url": "http://www.greysystems.eu/wp-content/uploads/2017/07/logo-Grey-menu.png",
+      "background": "#FFFFFF"
+    },
+    "description": "# Introduction\nThe Money Transfer Customer Online (aka MTC) REST API is built on HTTP. Our API is RESTFul. It has predictable\nresource URLs.  It returns HTTP response codes to indicate errors.  It also\naccepts and returns JSON in the HTTP body.  You can use your favorite\nHTTP/REST library for your programming language to use MTC's APIs. \n\nThe API is offered as SaaS platform, that is a software licensing and delivery model in which software is licensed on a subscription basis and is centrally hosted\n\n# Who we are? \n\nGrey Systems is a well establish European IT Consulting company that specialises in working with financial institutions. \n\nDuring the last years, we have developed \"Push Money\"​, a next level technology platform to provide instant online multichannel money transfer services and other financial services and products, outside of conventional banking channels.\n\nOur clients are international MTO's and MNO's that demand solid Fintech expertise for their business operations.\n\nGrey Systems is the best professional IT answer to real time remittance companies.\n\n\n# Goal \n\nThe goal of the API is provide an API for customers to interact with the MTC Systems. This means that the API is intended to by used directly by customers, so all the operations assume that a customer is logged in the system, and will provide information based on that assumption. \n\nThis means that there is no possibility through this MTC Online REST API to query for information at other leven than the customer level, for instance, this API does not offer any method to provide reporting for all customers within a `PartnerSystem`. Please contact GreySystems teams for additional API  \n\n\n# Authentication\n\nAll MTC APIs, including this one, use [OpenId Connect](http://openid.net) protocol to authenticate customers. Specifically the security used is JWT tokens. \n\nAt functional level there are 2 types of tokens: \n\n* **User Token**: Gets an  `access_token` issued on behalf of a customer (end-user), and will identity the customer itself against our API. To get a customer access_token you have to implement the [Authorization Code Flow](https://www.keycloak.org/docs/3.3/server_admin/topics/sso-protocols/oidc.html). \n\n\n\n![alt text](https://rograce.github.io/openid-connect-documentation/images/OIDCAuthCodeFlow.jpg \"Logo Title Text 1\")\n\n* **Service Token**: Gets an `access_token` issued to a  non end-user. Very useful for services that calls the API without an user logged in, background processes, etc... To get a Service token you have to implement the [Direct Access Grants](https://www.keycloak.org/docs/3.3/server_admin/topics/sso-protocols/oidc.html), which a REST based worflow to obtain programatically a token without user intervention. \n\n**What kind of token do I have to use**? \n\n* All API methods allow to use a **User Token**\n* `TRANSFER-PAYMENT` methods allow both tokens (user one and service one). However if you call these methods with an **User Token** you will be able to manage only the transfers that belongs to the user of that token. \n\n**How I use the tokens?**\n As stated in the introduction, both tokens types are JWT tokens, and you should set that token in the HTTP `Authorization` Header of the API call in this way: \n\n```\nAuthorization: Bearer {the_token}\n```\n\n\n# Common HTTP Error Responses\n\nThe MTC Rest API uses the following common HTTP status codes to communicate general issues or errors to the clients: \n\n* HTTP **401** (Non authorized): The token provided is expired, inexistent or non-valid\n* HTTP **403** (Forbidden): The customer is not allowed to perform the call\n* HTTP **400** (Invalid Request): The request provided is invalid (request is not well formed, a mandatory field is not provided, etc..). \n* HTTP **500** (Internal Server Error): Some internal component has failed to process your request. Please notify about this error to GreySystems team. \n"
+  },
+  "tags": [
+    {
+      "name": "transfers",
+      "description": "Manage transfers of a customer."
+    },
+    {
+      "name": "reward-and-discount",
+      "description": "Reward points related operations to manage the balance and use of points."
+    },
+    {
+      "name": "account",
+      "description": "Manages the account of a customer."
+    },
+    {
+      "name": "beneficiaries",
+      "description": "Manage beneficiaries of a customer."
+    },
+    {
+      "name": "transfer-payments",
+      "description": "Transfer payment related operations to manage the payments of the transfers."
+    },
+    {
+      "name": "data-catalogs",
+      "description": "Informational data, cities, data catalogs for selectors, enums, etc..."
+    },
+    {
+      "name": "transfer-catalogs",
+      "description": "Transfer related useful catalogs for sending money (countries available, currencies, payment methods, etc...)"
+    },
+    {
+      "name": "public-calculator",
+      "description": "Methods to be called without an user logged in, data returned is only informative."
+    }
+  ],
+  "paths": {
+    "/public-calculator/{idPartner}/estimate": {
+      "post": {
+        "tags": [
+          "public-calculator"
+        ],
+        "summary": "Estimates prices",
+        "security": [],
+        "description": "Estimate the prices and amounts for an specific conditions. Note that this is intented for public webpages, and no security is required.\nThe calculator allows 2 modes of calculation <br> <strong>Source Amount</strong> (request.sourceValue \\> 0) -> The customer wants to know how much the beneficiary will receive and how must fees will be charged using a source amount <br><strong>Destination Amount</strong> (request.destinationValue \\> 0) -> The customer wants to know how much he needs to send so that the beneficiary receives an specific destination amount <br><br> To determine the mode of the calculator just provide a sourceValue \\> 0 or destinationValue \\<0, but note that if both amounts are provided and are greater than 0, the calculator will raise an HTTP 400 error indicating that only one of them should be provided.\n",
+        "parameters": [
+          {
+            "name": "idPartner",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "Value of idPartner (request to GS your value/s available)"
+          },
+          {
+            "name": "estimateRequest",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/EstimateRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation Successful",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Country"
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid parameters, response contains detailed error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/public-calculator/{idPartner}/destinationCountries": {
+      "get": {
+        "tags": [
+          "public-calculator"
+        ],
+        "summary": "Destination countries available for a partner system",
+        "security": [],
+        "parameters": [
+          {
+            "name": "sourceCountry",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "description": "isocode of the source country"
+          },
+          {
+            "name": "idPartner",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "partner system id, request GS for this value"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation Successful",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Country"
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid parameters, response contains detailed error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/public-calculator/{idPartner}/payoutPayers": {
+      "get": {
+        "tags": [
+          "public-calculator"
+        ],
+        "summary": "Gets payout payers",
+        "security": [],
+        "parameters": [
+          {
+            "name": "idPartner",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "name": "destinationCountry",
+            "in": "query",
+            "type": "string",
+            "required": true,
+            "description": "the destination Country iso3"
+          },
+          {
+            "name": "sourceCountry",
+            "in": "query",
+            "type": "string",
+            "required": true,
+            "description": "The source country iso3"
+          },
+          {
+            "name": "payoutMethodCode",
+            "in": "query",
+            "type": "string",
+            "required": true,
+            "description": "The delivery method code"
+          },
+          {
+            "name": "payoutCurrency",
+            "in": "query",
+            "type": "string",
+            "required": true,
+            "description": "The delivery currency"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfull operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TransferPayer"
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Request. message attribute of response contains detailed information about the issue.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/transfer-payment/{idTransfer}/cancel": {
+      "post": {
+        "tags": [
+          "transfer-payments"
+        ],
+        "summary": "Cancels the transfer payment",
+        "description": "This operation must be used when a payment gateway returns an invalid payment response. \n\n\n**Be sure that the payment gateway response determines that the payment cannot be retried, as this operation is definitive. Once a transfer is cancelled; it cannot be un-cancelled. **\n",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TransferPaymentCancellationRequest"
+            }
+          },
+          {
+            "name": "idTransfer",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Operation successful. Transfer is cancelled."
+          },
+          "404": {
+            "description": "idTransfer does not exists",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "409": {
+            "description": "the transfer identified by idTransfer was already marked as payment-confirmed, cannot be cancelled due to a payment failure",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/transfer-payment/{idTransfer}/confirm": {
+      "post": {
+        "tags": [
+          "transfer-payments"
+        ],
+        "summary": "Confirms the payment of a transfer",
+        "description": "This operation must be used when a payment gateway returns an valid (authorised) payment response. \n\n\n**Once this operation is called, the transfer can be paid inmeditaly in those destinations with online payment **\n",
+        "parameters": [
+          {
+            "name": "idTransfer",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "name": "request",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TransferPaymentConfirmationRequest"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Operation Successfull. Transfer's payment confirmed, and transfer ready to be paid at destination."
+          },
+          "404": {
+            "description": "idTransfer does not exists"
+          },
+          "409": {
+            "description": "the transfer identified by idTransfer was already cancelled, so it cannot be marked as confirmed."
+          }
+        }
+      }
+    },
+    "/transfer-payment/{idTransfer}": {
+      "post": {
+        "tags": [
+          "transfer-payments"
+        ],
+        "summary": "Gets the payment of a transfer",
+        "description": "It returns the registered payment information of a transfer\n",
+        "parameters": [
+          {
+            "name": "idTransfer",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation Successful",
+            "schema": {
+              "$ref": "#/definitions/TransferPayment"
+            }
+          },
+          "404": {
+            "description": "idTransfer does not exists"
+          }
+        }
+      }
+    },
+    "/me": {
+      "get": {
+        "summary": "Get Customer Account",
+        "description": "Gets Customer data",
+        "tags": [
+          "account"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation Successful",
+            "schema": {
+              "$ref": "#/definitions/CustomerAccount"
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Modifies Customer Account",
+        "tags": [
+          "account"
+        ],
+        "parameters": [
+          {
+            "name": "account",
+            "required": true,
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/CustomerAccount"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "customer account modified correctly (no content is returned)"
+          },
+          "400": {
+            "description": "Invalid Request. message attribute of response contains detailed information about the issue.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/me/iddoc": {
+      "get": {
+        "summary": "Gets customer's identity documents data",
+        "tags": [
+          "account"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation Successful. If no documents have been found, and empty list will be returned",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/CustomerIdentityDocument"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Creates new customer identity document",
+        "tags": [
+          "account"
+        ],
+        "parameters": [
+          {
+            "name": "document",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CustomerIdentityDocument"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Document successfully created",
+            "schema": {
+              "$ref": "#/definitions/CreateEntityResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid Request. message attribute of response contains detailed information about the issue.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/me/iddoc/{iddocument}": {
+      "get": {
+        "summary": "Gets an identity document",
+        "tags": [
+          "account"
+        ],
+        "parameters": [
+          {
+            "name": "iddocument",
+            "in": "path",
+            "required": true,
+            "type": "number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document information",
+            "schema": {
+              "$ref": "#/definitions/CustomerIdentityDocument"
+            }
+          },
+          "404": {
+            "description": "iddocument has not been found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Modify a customer identity document",
+        "tags": [
+          "account"
+        ],
+        "parameters": [
+          {
+            "name": "iddocument",
+            "in": "path",
+            "required": true,
+            "type": "number"
+          },
+          {
+            "name": "document",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CustomerIdentityDocument"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Document modified correctly (no content response)"
+          },
+          "400": {
+            "description": "Invalid Request. message attribute of response contains detailed information about the issue.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/me/iddoc/{iddocument}/file": {
+      "get": {
+        "tags": [
+          "account"
+        ],
+        "produces": [
+          "text/plain"
+        ],
+        "summary": "gets the image of a document",
+        "description": "gets the image of a document as data-uri base64 encoded",
+        "parameters": [
+          {
+            "name": "iddocument",
+            "in": "path",
+            "required": true,
+            "type": "number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "image found",
+            "schema": {
+              "type": "file",
+              "example": "data:image/x-png;base64,iVBORw0KGgoAAAANSUhEUgAAAf ...."
+            }
+          },
+          "404": {
+            "description": "No image found for the iddocument provided"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "account"
+        ],
+        "summary": "upload a new file to an existent iddocument",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "name": "iddocument",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "name": "file",
+            "in": "formData",
+            "type": "file",
+            "description": "the file to upload"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "file uploaded correctly"
+          },
+          "404": {
+            "description": "the iddocument does not exists for this customer"
+          }
+        }
+      }
+    },
+    "/transfer/calculate": {
+      "post": {
+        "summary": "Calculator",
+        "description": "The use of the calculator is required to calculate how much a transfer does it cost for a customer, the final exchange rate applied to the operation, fees, extra comissions, discounts,  taxes, etc... </br> </br> The calculator allows 2 modes of calculation <br> <strong>Source Amount</strong> (request.sourceValue \\> 0) -> The customer wants to know how much the beneficiary will receive and how must fees will be charged using a source amount <br><strong>Destination Amount</strong> (request.destinationValue \\> 0) -> The customer wants to know how much he needs to send so that the beneficiary receives an specific destination amount <br><br> To determine the mode of the calculator just provide a sourceValue \\> 0 or destinationValue \\<0, but note that if both amounts are provided and are greater than 0, the calculator will raise an HTTP 400 error indicating that only one of them should be provided.",
+        "tags": [
+          "transfers"
+        ],
+        "parameters": [
+          {
+            "name": "calculatorRequest",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CalculatorRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "calculation has been successfull",
+            "schema": {
+              "$ref": "#/definitions/CalculatorResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid Request. message attribute of response contains detailed information about the issue.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "409": {
+            "description": "Limits exceeded. At this point, the calculate avoids the calculation if some single limit is exceeded. Note that accumulated limits for customers and other customer-related limits and compliance rules are not checked",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/transfer/catalog/sendingPurpose": {
+      "get": {
+        "summary": "Returns the list of available sending purposes for sending transfers",
+        "operationId": "GetTransferSendingPurposes",
+        "tags": [
+          "transfer-catalogs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfull operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TransferSendingReason"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transfer/catalog/sourceCountries": {
+      "get": {
+        "summary": "Get Source Countries",
+        "description": "Returns the list of available source countries for the logged in customer to send money from",
+        "operationId": "GetSourceCountries",
+        "tags": [
+          "transfer-catalogs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfull operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Country"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transfer/catalog/sourceCurrency": {
+      "get": {
+        "summary": "Gets source currencies",
+        "description": "Returns the list of available source currencies for the logged in customer to send money  from the source country specified in the path",
+        "operationId": "GetSourceCurrencies",
+        "parameters": [
+          {
+            "name": "sourceCountry",
+            "in": "query",
+            "type": "string",
+            "required": true,
+            "description": "isocode 3 of the source country"
+          }
+        ],
+        "tags": [
+          "transfer-catalogs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfull operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Currency"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transfer/catalog/destinationCountry": {
+      "get": {
+        "summary": "Gets Available destination countries",
+        "description": "Returns the list of available payment methods to pay a transfer (bank account, credit card, etc...).",
+        "operationId": "GetDestinationCountries",
+        "parameters": [
+          {
+            "name": "sourceCountry",
+            "in": "query",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "tags": [
+          "transfer-catalogs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfull operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Country"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transfer/catalog/paymentMethods": {
+      "get": {
+        "summary": "Gets payment Methods",
+        "description": "Returns the list of available payment methods to pay a transfer (bank account, credit card, etc...).",
+        "operationId": "GetPaymentMethods",
+        "tags": [
+          "transfer-catalogs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfull operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TransferPaymentMethod"
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Request. message attribute of response contains detailed information about the issue.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/transfer/catalog/payoutMethods": {
+      "get": {
+        "summary": "Gets payout Methods",
+        "description": "Returns the list of available payout methods for a destination country",
+        "operationId": "GetPayoutMethods",
+        "parameters": [
+          {
+            "name": "destinationCountry",
+            "in": "query",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "tags": [
+          "transfer-catalogs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfull operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TransferDeliveryMethod"
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Request. message attribute of response contains detailed information about the issue.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/transfer/catalog/payoutCurrencies": {
+      "get": {
+        "summary": "Gets payout Currencies",
+        "description": "Returns the list of available delivery currencies for a payout method within a payout destination country",
+        "operationId": "GetPayoutCurrencies",
+        "parameters": [
+          {
+            "name": "destinationCountry",
+            "in": "query",
+            "type": "string",
+            "required": true
+          },
+          {
+            "name": "payoutMethodCode",
+            "in": "query",
+            "type": "string",
+            "required": true,
+            "description": "The payout method code"
+          }
+        ],
+        "tags": [
+          "transfer-catalogs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfull operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Currency"
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Request. message attribute of response contains detailed information about the issue.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/transfer/catalog/payoutPayers": {
+      "get": {
+        "summary": "Gets payout payers",
+        "description": "Returns the list of available delivery Payers for a destination country, using an specific payout method and a payout currency. Also it returns the rate offered by the destination payer for that conditions",
+        "operationId": "GetPayers",
+        "parameters": [
+          {
+            "name": "destinationCountry",
+            "in": "query",
+            "type": "string",
+            "required": true,
+            "description": "the destination Country iso3"
+          },
+          {
+            "name": "sourceCountry",
+            "in": "query",
+            "type": "string",
+            "required": true,
+            "description": "The source country iso3"
+          },
+          {
+            "name": "payoutMethodCode",
+            "in": "query",
+            "type": "string",
+            "required": true,
+            "description": "The delivery method code"
+          },
+          {
+            "name": "payoutCurrency",
+            "in": "query",
+            "type": "string",
+            "required": true,
+            "description": "The delivery currency"
+          }
+        ],
+        "tags": [
+          "transfer-catalogs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfull operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TransferPayer"
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Request. message attribute of response contains detailed information about the issue.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/transfer/catalog/payoutDestinations": {
+      "get": {
+        "tags": [
+          "transfer-catalogs"
+        ],
+        "summary": "gets payout destinations",
+        "description": "returns the list of available destination for a destination country, using an specific payout method, payout currency and payer.",
+        "operationId": "GetDestinations",
+        "parameters": [
+          {
+            "name": "destinationCountry",
+            "in": "query",
+            "type": "string",
+            "required": true,
+            "description": "the destination Country iso3"
+          },
+          {
+            "name": "sourceCountry",
+            "in": "query",
+            "type": "string",
+            "required": true,
+            "description": "The source country iso3"
+          },
+          {
+            "name": "payoutMethodCode",
+            "in": "query",
+            "type": "string",
+            "required": true,
+            "description": "The delivery method code"
+          },
+          {
+            "name": "payoutCurrency",
+            "in": "query",
+            "type": "string",
+            "required": true,
+            "description": "The delivery currency"
+          },
+          {
+            "name": "payer",
+            "in": "query",
+            "type": "integer",
+            "required": true,
+            "description": "The payer id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "list of available payers. Empty list if no destinations have been found",
+            "schema": {
+              "$ref": "#/definitions/PayerDestination"
+            }
+          },
+          "400": {
+            "description": "Invalid Request. message attribute of response contains detailed information about the issue.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/data/idDocType": {
+      "get": {
+        "summary": "Gets the identity document types available for a customer",
+        "tags": [
+          "data-catalogs"
+        ],
+        "responses": {
+          "200": {
+            "description": "List of all the available identity documents",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/IdentityDocumentType"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/data/country": {
+      "get": {
+        "summary": "Get the entire list of countries and its associated data",
+        "operationId": "getCountries",
+        "tags": [
+          "data-catalogs"
+        ],
+        "responses": {
+          "200": {
+            "description": "List of all the countries of the world",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Country"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/data/country/{iso3}": {
+      "get": {
+        "summary": "Gets a single country using the isocode of the country",
+        "operationId": "getCountryById",
+        "tags": [
+          "data-catalogs"
+        ],
+        "parameters": [
+          {
+            "name": "iso3",
+            "in": "path",
+            "required": true,
+            "description": "the isocode alpha 3 of the country",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "success retrieval of country",
+            "schema": {
+              "$ref": "#/definitions/Country"
+            }
+          },
+          "404": {
+            "description": "country not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/data/currency": {
+      "get": {
+        "summary": "Get the entire list of currencies and its associated data",
+        "operationId": "getCurrencies",
+        "tags": [
+          "data-catalogs"
+        ],
+        "responses": {
+          "200": {
+            "description": "List of all the currencies available",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Currency"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/data/currency/{iso}": {
+      "get": {
+        "summary": "Gets a single currency using the isocode of the currency",
+        "operationId": "getCurrencyByIso",
+        "tags": [
+          "data-catalogs"
+        ],
+        "parameters": [
+          {
+            "name": "iso",
+            "in": "path",
+            "required": true,
+            "description": "the isocode identifier of the currency",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "success retrieval of country",
+            "schema": {
+              "$ref": "#/definitions/Currency"
+            }
+          },
+          "404": {
+            "description": "currency not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/data/country/{countryIso3}/city": {
+      "get": {
+        "summary": "Search cities of the specified country",
+        "operationId": "SearchCities",
+        "tags": [
+          "data-catalogs"
+        ],
+        "parameters": [
+          {
+            "name": "countryIso3",
+            "in": "path",
+            "required": true,
+            "description": "the isocode identifier of the currency",
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "description": "search term to look for cities within country specifiec by countryIso3 parameter. Min-length of value should be 3",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success, array of cities, or empty array if none have been found",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/City"
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Request. message attribute of response contains detailed information about the issue.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "404": {
+            "description": "countryIso3 provided is not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/transfer": {
+      "post": {
+        "summary": "Sends a transfer",
+        "description": "Operation to send a transfer to the system. The mandatory information of the request can be found in the SendTransferRequest data scheme. However please take into account that depending on the configuration requested to GreySystems, additional fields can be marked as mandatory, and thus the system can reject a transfer if some mandatory fields are not provided (as 400 HTTP error).\n  <br>\n  \n  **Additional Validations**\n  \n  * bankAccountId is required in case of the destination of the transfer is to a bank account \n  * You have to provide `srcAmount` or `destAmount`, but do not provide the 2 values in the same request.\n  \n  **Compliance Considerations**\n  When some compliance rule is broken, an HTTP 409 (Conflict) error is returned with information about what specific rule has been broken , and additional information of the broken rule, so that the customer can ammend the transfer (if possible) to then send money.\n  <br>\n  As compliance rules are configured ad-hoc for your company, GreySystems will provide extra information about how to handle specifically all rules configured for you. \n  \n",
+        "operationId": "sendTransfer",
+        "parameters": [
+          {
+            "name": "transferRequest",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SendTransferRequest"
+            }
+          }
+        ],
+        "tags": [
+          "transfers"
+        ],
+        "responses": {
+          "201": {
+            "description": "The transfer has been properly sent. Internal id of the transfer just sent is returned. This is the id you have to use to query all the data of transfer, to perform payment related operations etc... Is it important to note that this id should not be shown to users, its purpose is technical and identifies uniquely a transfer within the system at technical level.",
+            "schema": {
+              "$ref": "#/definitions/CreateEntityResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid Request. message attribute of response contains detailed information about the issue.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "409": {
+            "description": "A compliance rule has been broken",
+            "schema": {
+              "$ref": "#/definitions/ComplianceErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/transfer/{id}": {
+      "get": {
+        "summary": "Get a transfer by its id",
+        "operationId": "getTransfer",
+        "tags": [
+          "transfers"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The id of the transfer",
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The transfer object if found and belongs to the current user logged",
+            "schema": {
+              "$ref": "#/definitions/Transfer"
+            }
+          },
+          "404": {
+            "description": "no transfer has been found using the id provided as request parameter",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/transfer/search": {
+      "post": {
+        "summary": "Search transfers",
+        "operationId": "searchTransfers",
+        "tags": [
+          "transfers"
+        ],
+        "parameters": [
+          {
+            "name": "search request parameters",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SearchTransferRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An array containing the results (paginated) or empty array if no results have been found",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TransferSearchResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/beneficiary": {
+      "get": {
+        "summary": "List all beneficiaries",
+        "operationId": "listBeneficiaries",
+        "tags": [
+          "beneficiaries"
+        ],
+        "responses": {
+          "200": {
+            "description": "An array with all the beneficiaries of the customer",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Beneficiary"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a beneficiary",
+        "operationId": "createBeneficiary",
+        "description": "firstName, lastName and telephone1 are mandatory. id property is ignored in case it's provided",
+        "tags": [
+          "beneficiaries"
+        ],
+        "parameters": [
+          {
+            "name": "beneficiary",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Beneficiary"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Beneficiary created successfully, with the id generated by the system that unique identifies the beneficiary",
+            "schema": {
+              "$ref": "#/definitions/CreateEntityResponse"
+            }
+          }
+        }
+      }
+    },
+    "/beneficiary/{beneficiaryId}": {
+      "get": {
+        "summary": "gets a beneficiary",
+        "description": "returns an specific benefiary",
+        "tags": [
+          "beneficiaries"
+        ],
+        "parameters": [
+          {
+            "name": "beneficiaryId",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Valid beneficiaryID, response contains the beneficiary info",
+            "schema": {
+              "$ref": "#/definitions/Beneficiary"
+            }
+          },
+          "404": {
+            "description": "The beneficiaryId does not exists or does not belong to the current customer logged in"
+          }
+        }
+      },
+      "put": {
+        "summary": "Modifies a beneficiary",
+        "description": "Modifies an existent beneficiary",
+        "tags": [
+          "beneficiaries"
+        ],
+        "parameters": [
+          {
+            "name": "beneficiaryId",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "beneficiary has been modified, no response is returned (no content)"
+          },
+          "404": {
+            "description": "The beneficiaryID does not exists or does not belong to the current customer logged in",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/beneficiary/{beneficiaryId}/bankAccount": {
+      "get": {
+        "summary": "List all saved bank accounts for a beneficiary",
+        "description": "It will retrieve all the accounts saved for a beneficiary. If the beneficiary does not have any bank account saved, an empty list will be returned. <br><br> Note that the 404 result is reserved for the case that a beneficiaryId does not exists, while returning an empty array means that the beneficiaryId is valid but he has not saved any account yet.",
+        "operationId": "listBeneficiaryBankAccounts",
+        "tags": [
+          "beneficiaries"
+        ],
+        "parameters": [
+          {
+            "name": "beneficiaryId",
+            "type": "integer",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An array with all the bank accounts of the beneficiary",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/BeneficiaryBankAccount"
+              }
+            }
+          },
+          "404": {
+            "description": "The beneficiary provided does not exists or does not belong to the customer logged in."
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a beneficiary bank account",
+        "operationId": "createBeneficiaryBankAccount",
+        "description": "Creates a beneficiary bank account for an specific beneficiary. <br><br> Note that this operation always create a bankAccount",
+        "tags": [
+          "beneficiaries"
+        ],
+        "parameters": [
+          {
+            "name": "beneficiaryId",
+            "type": "integer",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "bankAccount",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateModifyBeneficiaryBankAccount"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "BankAccount have been created. The id of the created bank account is returned",
+            "schema": {
+              "$ref": "#/definitions/CreateEntityResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid Request. message attribute of response contains detailed information about the issue.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "404": {
+            "description": "The beneficiaryId does not exists or it does not belongs to the current user logged in.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/beneficiary/{beneficiaryId}/bankAccount/{bankAccountId}": {
+      "get": {
+        "summary": "Gets a beneficiary bank account",
+        "operationId": "getBeneficiaryBankAccount",
+        "description": "Gets an specific (existent) beneficiary bank account using its id",
+        "tags": [
+          "beneficiaries"
+        ],
+        "parameters": [
+          {
+            "name": "beneficiaryId",
+            "type": "integer",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "bankAccountId",
+            "type": "integer",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the beneficiary bank account id",
+            "schema": {
+              "$ref": "#/definitions/BeneficiaryBankAccount"
+            }
+          },
+          "404": {
+            "description": "Beneficiary bank account not found or BeneficiaryId does not belong to current user logged in",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Modifies a beneficiary bank account",
+        "operationId": "modifyBeneficiaryBankAccount",
+        "description": "Modifies an already created beneficiary bank account for an specific beneficiary. <br><br>",
+        "tags": [
+          "beneficiaries"
+        ],
+        "parameters": [
+          {
+            "name": "beneficiaryId",
+            "type": "integer",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "bankAccountId",
+            "type": "integer",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "bankAccount",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateModifyBeneficiaryBankAccount"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Bank account modified. No content is returned as response"
+          },
+          "400": {
+            "description": "Invalid Request. message attribute of response contains detailed information about the issue.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "404": {
+            "description": "The beneficiaryId does not exists or it does not belongs to the current user logged in.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/beneficiary/data/relationship": {
+      "get": {
+        "summary": "Returns the list of available customer relationships for beneficiaries",
+        "operationId": "GetTransferRelationships",
+        "tags": [
+          "beneficiaries"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfull operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/CustomerRelationship"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rewards/account": {
+      "get": {
+        "summary": "Get rewards account info",
+        "description": "Gets customer reward points account data, returns balance and minimun threshold to redeem points for discounts or donations <br><br> Note that if no point operation has occurred, the points account does not exist yet, the request will raise an HTTP 404 error indicating that reward account does not exist.",
+        "tags": [
+          "reward-and-discount"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfull operation",
+            "schema": {
+              "$ref": "#/definitions/RewardsAccount"
+            }
+          },
+          "404": {
+            "description": "Account does not exist. At this point, no point operation has occurred and the points account does not exist yet",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/rewards/account/{accountId}/movements": {
+      "get": {
+        "summary": "Get rewards account movements",
+        "description": "It will retrieve all the customer reward points operations and movements. If the customer does not have any points account movement saved, an empty list will be returned.",
+        "tags": [
+          "reward-and-discount"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "type": "integer",
+            "in": "path",
+            "required": true,
+            "description": "account id"
+          },
+          {
+            "name": "page",
+            "type": "integer",
+            "in": "query",
+            "required": true,
+            "description": "requested page number. Starts at 0"
+          },
+          {
+            "name": "pageSize",
+            "type": "integer",
+            "in": "query",
+            "required": true,
+            "description": "number of elements per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An array containing the results (paginated) or empty array if no results have been found",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/RewardsMovement"
+              }
+            }
+          },
+          "404": {
+            "description": "The account provided does not exists or does not belong to the customer logged in",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/rewards/rates/{payoutCurrency}": {
+      "get": {
+        "summary": "Get rewards points rate",
+        "description": "It will retrieve the reward points exchange rate offered for the requested currency.\n<br> Received rate is the result of currency/points (Example: 1 USD / 2 Points = 0.5 rate)\n",
+        "tags": [
+          "reward-and-discount"
+        ],
+        "parameters": [
+          {
+            "name": "payoutCurrency",
+            "type": "string",
+            "in": "path",
+            "required": true,
+            "description": "alphanumeric iso code (3-letters) of the payout currency"
+          },
+          {
+            "name": "country",
+            "type": "string",
+            "in": "query",
+            "required": true,
+            "description": "alphanumeric iso code (3-letters) of the source country"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An array containing the results (paginated) or empty array if no results have been found",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/RewardsRate"
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Request. message attribute of response contains detailed information about the issue.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/rewards/discount": {
+      "post": {
+        "summary": "Creates a discount code",
+        "description": "Creates a personal discount code to apply on transfer fees redeeming points from the reward points account balance.\n<br> The number of points must be bigger than the account minimum points threshold and less than its equivalency to total transfer fees.\n<br> The retrieved code can be used on Calculator to apply the discount.\n",
+        "tags": [
+          "reward-and-discount"
+        ],
+        "parameters": [
+          {
+            "name": "create discountCode request parameters",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/DiscountCodeRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfull operation",
+            "schema": {
+              "$ref": "#/definitions/DiscountCodeResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid Request. message attribute of response contains detailed information about the issue.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Beneficiary": {
+      "type": "object",
+      "required": [
+        "firstName",
+        "lastName",
+        "telephone1"
+      ],
+      "properties": {
+        "id": {
+          "type": "number"
+        },
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "gender": {
+          "type": "string",
+          "enum": [
+            "Male",
+            "Female"
+          ]
+        },
+        "telephone1": {
+          "type": "string"
+        },
+        "telephone2": {
+          "type": "string"
+        },
+        "address": {
+          "properties": {
+            "street": {
+              "type": "string"
+            },
+            "number": {
+              "type": "number"
+            },
+            "country": {
+              "type": "string",
+              "example": "USA",
+              "description": "ISO 3166 country isocode (Alpha3)"
+            },
+            "city": {
+              "type": "number"
+            },
+            "postalCode": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "senderRelationshipId": {
+          "type": "number"
+        },
+        "occupation": {
+          "type": "string"
+        },
+        "nationality": {
+          "type": "string",
+          "example": "USA",
+          "description": "ISO 3166 country isocode (Alpha3)"
+        },
+        "birthCity": {
+          "type": "number",
+          "example": 1234
+        },
+        "email": {
+          "type": "string",
+          "example": "email@test.com"
+        },
+        "birthdate": {
+          "type": "string",
+          "example": "1984-04-23T00:00:43.511Z"
+        }
+      }
+    },
+    "CreateEntityResponse": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "number"
+        }
+      }
+    },
+    "Error": {
+      "type": "object",
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "SearchTransferRequest": {
+      "type": "object",
+      "required": [
+        "dateFrom",
+        "dateTo",
+        "page",
+        "rowsPerPage"
+      ],
+      "properties": {
+        "dateFrom": {
+          "type": "string",
+          "example": "2016-04-23T00:00:43.511Z"
+        },
+        "dateTo": {
+          "type": "string",
+          "example": "2016-04-24T00:00:00.511Z"
+        },
+        "page": {
+          "type": "number",
+          "example": 0
+        },
+        "rowsPerPage": {
+          "type": "number",
+          "example": 25
+        }
+      }
+    },
+    "ExchangeRate": {
+      "type": "object",
+      "required": [
+        "srcCcy",
+        "destCcy",
+        "value"
+      ],
+      "properties": {
+        "srcCcy": {
+          "type": "string",
+          "example": "EUR"
+        },
+        "destCcy": {
+          "type": "string",
+          "example": "USD"
+        },
+        "value": {
+          "type": "number",
+          "example": 0.87654
+        }
+      }
+    },
+    "CurrencyAmount": {
+      "type": "object",
+      "required": [
+        "ccy",
+        "value"
+      ],
+      "properties": {
+        "ccy": {
+          "type": "string",
+          "example": "EUR"
+        },
+        "value": {
+          "type": "number",
+          "example": 300.56
+        }
+      }
+    },
+    "PromoCode": {
+      "type": "object",
+      "required": [
+        "discountApplied",
+        "isPromoApplied",
+        "code",
+        "message"
+      ],
+      "properties": {
+        "discountApplied": {
+          "$ref": "#/definitions/CurrencyAmount"
+        },
+        "isPromoApplied": {
+          "type": "boolean",
+          "example": true
+        },
+        "code": {
+          "type": "string",
+          "example": "41950914-cf43-466b-ado1-13451b38"
+        },
+        "message": {
+          "type": "string",
+          "example": "Test"
+        }
+      }
+    },
+    "TransferSearchResponse": {
+      "properties": {
+        "id": {
+          "type": "number",
+          "example": 571418
+        },
+        "operationDate": {
+          "type": "string",
+          "example": "2018-01-10T16:21:23.173+01:00"
+        },
+        "transactionCode": {
+          "type": "string",
+          "example": "QWER123412341234"
+        },
+        "urn": {
+          "type": "string",
+          "example": "888823"
+        },
+        "status": {
+          "type": "string",
+          "example": "Registered"
+        },
+        "blocked": {
+          "type": "boolean",
+          "example": true
+        },
+        "beneficiaryFirstName": {
+          "type": "string",
+          "example": "Michael"
+        },
+        "beneficiaryLastName": {
+          "type": "string",
+          "example": "Test"
+        },
+        "destination": {
+          "properties": {
+            "destinationName": {
+              "type": "string",
+              "example": "Bank Deposit France"
+            },
+            "destinationCode": {
+              "type": "string",
+              "example": "1234$1234"
+            },
+            "payerName": {
+              "type": "string",
+              "example": "Money Partner Destination"
+            },
+            "bankAccount": {
+              "type": "string",
+              "example": "1234123412341234"
+            },
+            "bankAgency": {
+              "type": "string",
+              "example": "Asdfasdfasdf"
+            }
+          },
+          "type": "object"
+        },
+        "paymentInfo": {
+          "properties": {
+            "idPaymentGateway": {
+              "type": "number",
+              "example": 1
+            },
+            "paymentMethod": {
+              "type": "string",
+              "example": "CreditCard"
+            },
+            "paymentFinished": {
+              "type": "boolean",
+              "example": false
+            },
+            "authCode": {
+              "type": "string",
+              "example": "12341234"
+            }
+          },
+          "type": "object"
+        },
+        "financialData": {
+          "properties": {
+            "sendAmount": {
+              "$ref": "#/definitions/CurrencyAmount"
+            },
+            "receiveAmount": {
+              "$ref": "#/definitions/CurrencyAmount"
+            },
+            "fees": {
+              "$ref": "#/definitions/CurrencyAmount"
+            },
+            "taxes": {
+              "$ref": "#/definitions/CurrencyAmount"
+            },
+            "totalPaidByCustomer": {
+              "$ref": "#/definitions/CurrencyAmount"
+            },
+            "rateApplied": {
+              "$ref": "#/definitions/ExchangeRate"
+            }
+          },
+          "type": "object"
+        }
+      }
+    },
+    "Transfer": {
+      "required": [
+        "id",
+        "operationDate",
+        "transactionCode",
+        "urn",
+        "status",
+        "blocked",
+        "idBeneficiary",
+        "beneficiaryTransferData",
+        "destination",
+        "financialData"
+      ],
+      "properties": {
+        "id": {
+          "type": "number",
+          "example": 571418
+        },
+        "operationDate": {
+          "type": "string",
+          "example": "2018-01-10T16:21:23.173+01:00"
+        },
+        "transactionCode": {
+          "type": "string",
+          "example": "QWER123412341234"
+        },
+        "urn": {
+          "type": "string",
+          "example": "888823"
+        },
+        "status": {
+          "type": "string",
+          "example": "Registered",
+          "enum": [
+            "Registered",
+            "Delivered",
+            "Cancelled"
+          ]
+        },
+        "blocked": {
+          "type": "boolean",
+          "example": true
+        },
+        "paymentInfo": {
+          "properties": {
+            "idPaymentGateway": {
+              "type": "number",
+              "example": 1
+            },
+            "paymentMethod": {
+              "type": "string",
+              "example": "CreditCard"
+            },
+            "paymentFinished": {
+              "type": "boolean",
+              "example": false
+            },
+            "authCode": {
+              "type": "string",
+              "example": "12341234"
+            }
+          },
+          "type": "object"
+        },
+        "idBeneficiary": {
+          "type": "number",
+          "example": 57062
+        },
+        "beneficiaryTransferData": {
+          "properties": {
+            "firstName": {
+              "type": "string",
+              "example": "string"
+            },
+            "lastName": {
+              "type": "string",
+              "example": "string"
+            },
+            "gender": {
+              "type": "string",
+              "enum": [
+                "Male",
+                "Female"
+              ],
+              "example": "Male"
+            },
+            "telephone1": {
+              "type": "string",
+              "example": "string"
+            },
+            "telephone2": {
+              "type": "string",
+              "example": "string"
+            },
+            "address": {
+              "properties": {
+                "street": {
+                  "type": "string",
+                  "example": "string"
+                },
+                "number": {
+                  "type": "number",
+                  "example": 0
+                },
+                "country": {
+                  "type": "string",
+                  "example": "USA"
+                },
+                "city": {
+                  "type": "number",
+                  "example": 0
+                },
+                "postalCode": {
+                  "type": "string",
+                  "example": "string"
+                }
+              },
+              "type": "object"
+            },
+            "senderRelationshipId": {
+              "type": "number",
+              "example": 0
+            },
+            "occupation": {
+              "type": "string",
+              "example": "string"
+            },
+            "nationality": {
+              "type": "string",
+              "example": "USA"
+            },
+            "birthCity": {
+              "type": "number",
+              "example": 1234
+            },
+            "email": {
+              "type": "string",
+              "example": "email@test.com"
+            },
+            "birthdate": {
+              "type": "string",
+              "example": "1984-04-23T00:00:43.511Z"
+            }
+          },
+          "type": "object"
+        },
+        "destination": {
+          "properties": {
+            "destinationName": {
+              "type": "string",
+              "example": "Bank Deposit France"
+            },
+            "destinationCode": {
+              "type": "string",
+              "example": "1234$1234"
+            },
+            "payerName": {
+              "type": "string",
+              "example": "Money Partner Destination"
+            },
+            "bankAccount": {
+              "type": "string",
+              "example": "1234123412341234"
+            },
+            "bankAgency": {
+              "type": "string",
+              "example": "Asdfasdfasdf"
+            }
+          },
+          "type": "object"
+        },
+        "financialData": {
+          "properties": {
+            "sendAmount": {
+              "$ref": "#/definitions/CurrencyAmount"
+            },
+            "receiveAmount": {
+              "$ref": "#/definitions/CurrencyAmount"
+            },
+            "fees": {
+              "$ref": "#/definitions/CurrencyAmount"
+            },
+            "taxes": {
+              "$ref": "#/definitions/CurrencyAmount"
+            },
+            "totalPaidByCustomer": {
+              "$ref": "#/definitions/CurrencyAmount"
+            },
+            "rateApplied": {
+              "$ref": "#/definitions/ExchangeRate"
+            }
+          },
+          "type": "object"
+        }
+      }
+    },
+    "Country": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "numeric iso of the country",
+          "type": "number",
+          "example": 840
+        },
+        "iso2": {
+          "type": "string",
+          "example": "US",
+          "description": "alphanumeric iso code (2-letters) of the country"
+        },
+        "iso3": {
+          "type": "string",
+          "example": "USA",
+          "description": "alphanumeric iso code (3-letters) of the country"
+        },
+        "name_en": {
+          "type": "string",
+          "example": "United States Of America",
+          "description": "NAme in english language of the country"
+        },
+        "phonePrefix": {
+          "description": "phone prefix in use for phone calls to the country",
+          "type": "string",
+          "example": "+1"
+        }
+      }
+    },
+    "City": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "id of the city",
+          "type": "number",
+          "example": 12341234
+        },
+        "name_ascii": {
+          "description": "name of the city (using ascii characters, for english readers)",
+          "type": "string",
+          "example": "London"
+        },
+        "name": {
+          "description": "name of the city (locale based). Will return non-ascii characters for those cities that are originally written using non-latin alphabet.",
+          "type": "string",
+          "example": "London"
+        }
+      }
+    },
+    "Currency": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "numeric iso of the currency",
+          "type": "number",
+          "example": 840
+        },
+        "iso": {
+          "description": "alphanumeric iso code (3-letters) of the currency",
+          "type": "string",
+          "example": "USD"
+        },
+        "name_en": {
+          "type": "string",
+          "description": "English name of the currency",
+          "example": "Us Dollar"
+        }
+      }
+    },
+    "CustomerRelationship": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "example": 1
+        },
+        "code": {
+          "type": "string",
+          "example": "23"
+        },
+        "name": {
+          "type": "string",
+          "example": "Son"
+        }
+      }
+    },
+    "TransferPaymentMethod": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "example": 12
+        },
+        "name": {
+          "type": "string",
+          "example": "Debit Card"
+        },
+        "gateway": {
+          "type": "string",
+          "example": "OGO",
+          "description": "Code of the Payment Gateway used with this payment method"
+        }
+      }
+    },
+    "TransferDeliveryMethod": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "example": "BA"
+        },
+        "description": {
+          "type": "string",
+          "example": "Bank Account Deposit"
+        }
+      }
+    },
+    "CalculatorRequest": {
+      "type": "object",
+      "properties": {
+        "sourceCurrency": {
+          "type": "string",
+          "description": "iso3 code of source currency",
+          "example": "EUR"
+        },
+        "sourceCountry": {
+          "type": "string",
+          "description": "iso3 code of the source country",
+          "example": "ESP"
+        },
+        "destinationCountry": {
+          "type": "string",
+          "description": "iso3 code of the destination country"
+        },
+        "payoutCurrency": {
+          "type": "string",
+          "description": "iso3 code of payout currency",
+          "example": "USD"
+        },
+        "paymentMethodId": {
+          "type": "integer",
+          "description": "id of the payment method"
+        },
+        "payerId": {
+          "type": "integer",
+          "description": "id of the payer"
+        },
+        "sourceValue": {
+          "type": "number",
+          "description": "Amount that the customer wants send (net amount) expressed in sourceCurrency"
+        },
+        "destinationValue": {
+          "type": "number",
+          "description": "Amount that the customer wants to receive expressed in payoutCurrency"
+        },
+        "payoutOption": {
+          "type": "string",
+          "description": "Code of selected payout method of available for the destination country"
+        },
+        "promoCode": {
+          "type": "string",
+          "description": "Discount code provided to apply on fees calculation"
+        }
+      }
+    },
+    "TransferPayer": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "example": 1234134
+        },
+        "name": {
+          "type": "string",
+          "example": "DPR - Destination Payer"
+        },
+        "exchangeRate": {
+          "$ref": "#/definitions/ExchangeRate"
+        }
+      }
+    },
+    "CalculatorResponse": {
+      "type": "object",
+      "properties": {
+        "SrcValue": {
+          "$ref": "#/definitions/CurrencyAmount"
+        },
+        "DestValue": {
+          "$ref": "#/definitions/CurrencyAmount"
+        },
+        "rate": {
+          "$ref": "#/definitions/ExchangeRate"
+        },
+        "fees": {
+          "$ref": "#/definitions/CurrencyAmount"
+        },
+        "discount": {
+          "$ref": "#/definitions/CurrencyAmount"
+        },
+        "totalToPay": {
+          "$ref": "#/definitions/CurrencyAmount"
+        },
+        "paymentMethodCost": {
+          "$ref": "#/definitions/CurrencyAmount"
+        },
+        "taxes": {
+          "$ref": "#/definitions/CurrencyAmount"
+        },
+        "promoCodeList": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PromoCode"
+          }
+        }
+      }
+    },
+    "BeneficiaryBankAccount": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "example": 12341234
+        },
+        "number": {
+          "type": "string",
+          "example": "1234-1234-1234-1234",
+          "description": "The bank account number"
+        },
+        "branchName": {
+          "type": "string",
+          "example": "Office XX",
+          "description": "The bank account"
+        },
+        "bankCode": {
+          "type": "string",
+          "example": 12341234,
+          "description": "Code bank is the code of what our system calls Destination (See model  PayerDestination)"
+        },
+        "bankName": {
+          "type": "string",
+          "example": "Bank of Credit USA",
+          "description": "Bank Name that belongs to bankCode"
+        },
+        "currency": {
+          "type": "string",
+          "example": "USD",
+          "description": "The currency of the bank account"
+        },
+        "country": {
+          "type": "string",
+          "example": "USA",
+          "description": "The country to which the bank account belongs"
+        }
+      }
+    },
+    "CreateModifyBeneficiaryBankAccount": {
+      "type": "object",
+      "required": [
+        "number",
+        "currency",
+        "country",
+        "codeBank"
+      ],
+      "properties": {
+        "number": {
+          "type": "string",
+          "example": "1234-1234-1234-1234",
+          "description": "The bank account number"
+        },
+        "branchName": {
+          "type": "string",
+          "example": "Office XX",
+          "description": "The bank account"
+        },
+        "codeBank": {
+          "type": "string",
+          "example": 12341234,
+          "description": "Code bank is the code of what our system calls Destination (See model  PayerDestination)"
+        },
+        "currency": {
+          "type": "string",
+          "example": "USD",
+          "description": "The currency of the bank account"
+        },
+        "country": {
+          "type": "string",
+          "example": "USA",
+          "description": "The country to which the bank account belongs"
+        }
+      }
+    },
+    "ComplianceErrorResponse": {
+      "type": "object",
+      "properties": {
+        "idControl": {
+          "type": "integer",
+          "description": "The id of the compliance control that has rejected the operation. For a full list of ids returned, please contact GreySystems teams, as these values will depend on specific configurations."
+        },
+        "message": {
+          "type": "string",
+          "description": "Message (english) returned for this control"
+        },
+        "additionalDetails": {
+          "type": "array",
+          "description": "List of additional info in case some control request more information",
+          "items": {
+            "$ref": "#/definitions/GenericAdditionalField"
+          }
+        }
+      }
+    },
+    "PayerDestination": {
+      "type": "object",
+      "required": [
+        "id",
+        "code",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "id of the destination. Note that catalogs can be rebuilt so this id can change over time for the same logical destination. If you need to store the destination in a 3rd party system, please use the code",
+          "example": 12341234234
+        },
+        "code": {
+          "type": "string",
+          "description": "code of the destination",
+          "example": "12$1234"
+        },
+        "name": {
+          "description": "name of the destination",
+          "example": "SBB - Bank of America"
+        },
+        "address": {
+          "type": "string",
+          "description": "Address of the destination (Street, number, letter). Optional",
+          "example": "Street X, 423"
+        },
+        "city": {
+          "description": "City of the destination (optional) destinations",
+          "properties": {
+            "id": {
+              "type": "integer",
+              "description": "id of the city",
+              "example": 12341
+            },
+            "name": {
+              "type": "string",
+              "description": "name of the city",
+              "example": "London"
+            }
+          }
+        }
+      }
+    },
+    "GenericAdditionalField": {
+      "type": "object",
+      "required": [
+        "key",
+        "value"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "key of the additional field",
+          "example": "SOURCE_FUNDS"
+        },
+        "value": {
+          "description": "value of the field identified by key in string format (for non-string data values, ask GreySystems teams for the proper formats)",
+          "example": "Salary",
+          "type": "string"
+        }
+      }
+    },
+    "TransferSendingReason": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "example": 1
+        },
+        "code": {
+          "type": "string",
+          "example": "3"
+        },
+        "name": {
+          "type": "string",
+          "example": "Family Support"
+        }
+      }
+    },
+    "IdentityDocumentType": {
+      "type": "object",
+      "required": [
+        "id",
+        "code",
+        "description"
+      ],
+      "properties": {
+        "id": {
+          "type": "number",
+          "example": 1234124
+        },
+        "code": {
+          "type": "string",
+          "example": "PASS"
+        },
+        "description": {
+          "type": "string",
+          "example": "Passport"
+        }
+      }
+    },
+    "CustomerIdentityDocument": {
+      "type": "object",
+      "required": [
+        "id",
+        "documentNumber"
+      ],
+      "properties": {
+        "id": {
+          "type": "number",
+          "example": 2563938,
+          "description": "unique identifier of the identity document, assigned by the system"
+        },
+        "documentNumber": {
+          "type": "string",
+          "example": "5549302P",
+          "description": "document's number"
+        },
+        "type": {
+          "type": "number",
+          "example": 6,
+          "description": "id of the document type"
+        },
+        "expiryDate": {
+          "type": "string",
+          "example": "2017-09-30T23:59:59+02:00",
+          "description": "Expiration date of the identity document"
+        },
+        "country": {
+          "type": "string",
+          "example": "ESP",
+          "description": "country that issued the identity document"
+        },
+        "hasImage": {
+          "type": "boolean",
+          "example": true,
+          "description": "determines if the identity document has an image associated"
+        },
+        "deliveryAuthority": {
+          "type": "string",
+          "example": "State",
+          "description": "Authority that delivered the identity document"
+        }
+      }
+    },
+    "CustomerAccount": {
+      "type": "object",
+      "required": [
+        "id",
+        "code",
+        "firstName",
+        "lastName",
+        "telephone1"
+      ],
+      "properties": {
+        "id": {
+          "type": "number",
+          "example": 57060,
+          "description": "Unique identifier of the customer in the system. Should not be shown to user"
+        },
+        "address": {
+          "type": "object",
+          "properties": {
+            "street": {
+              "type": "string",
+              "description": "Street name"
+            },
+            "number": {
+              "type": "number",
+              "description": "Street number"
+            },
+            "country": {
+              "type": "string",
+              "example": "USA",
+              "description": "ISO 3166 country isocode (Alpha3)"
+            },
+            "city": {
+              "type": "number",
+              "description": "city id of the address"
+            },
+            "postalCode": {
+              "type": "string",
+              "description": "postal code"
+            }
+          }
+        },
+        "code": {
+          "type": "string",
+          "example": "57060",
+          "description": "code of customer, this should be the code shown to the user in case if it's required"
+        },
+        "firstName": {
+          "type": "string",
+          "example": "Juan"
+        },
+        "lastName": {
+          "type": "string",
+          "example": "Sanchez Perulena"
+        },
+        "birthDate": {
+          "type": "string",
+          "example": "1970-05-12T00:00:00+02:00"
+        },
+        "gender": {
+          "type": "string",
+          "enum": [
+            "Male",
+            "Female"
+          ],
+          "example": "Male"
+        },
+        "telephone1": {
+          "type": "string",
+          "example": "+34 629 21 56 01"
+        },
+        "telephone2": {
+          "type": "string",
+          "example": "+34 629 21 56 02"
+        },
+        "email": {
+          "type": "string",
+          "example": "test@test.es"
+        },
+        "occupation": {
+          "type": "string",
+          "example": "IT Consultant"
+        },
+        "nationality": {
+          "type": "string",
+          "example": "ESP"
+        },
+        "birthCountry": {
+          "type": "string",
+          "example": "ESP"
+        },
+        "birthCity": {
+          "type": "number",
+          "example": 12341234
+        }
+      }
+    },
+    "SendTransferRequest": {
+      "type": "object",
+      "required": [
+        "beneficiaryID",
+        "destinationId",
+        "paymentMethodId",
+        "destinationCountry",
+        "srcCountry",
+        "transferPurposeId"
+      ],
+      "properties": {
+        "beneficiaryID": {
+          "type": "number",
+          "description": "id of beneficiary that will receive the money"
+        },
+        "destinationId": {
+          "type": "number",
+          "description": "Id of the destination (check getDestinations operation)"
+        },
+        "bankAccountId": {
+          "type": "number",
+          "description": "In case the transfer is paid to a bank account, this will identity the bank account"
+        },
+        "messageForBeneficiary": {
+          "type": "string",
+          "description": "Optional message for beneficiary"
+        },
+        "paymentMethodId": {
+          "type": "number",
+          "description": "Id Method of payment of the transfer (check getPaymentMethods operation)"
+        },
+        "destinationCountry": {
+          "type": "string",
+          "description": "IsoCode 3 of the destination country of the transfer"
+        },
+        "srcCountry": {
+          "type": "string",
+          "description": "IsoCode 3 of the source country of the transfer"
+        },
+        "srcAmount": {
+          "type": "number",
+          "description": "Source amount that the customer will send."
+        },
+        "destAmount": {
+          "type": "number",
+          "description": "Destination amount that the customer wants the receiver receive."
+        },
+        "promoCodeList": {
+          "description": "List of discount codes applied to the transfer.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "transferPurposeId": {
+          "type": "number",
+          "description": "id of the transfer's purpose"
+        },
+        "additionalFields": {
+          "description": "Array of additional fields to be added to the transfer's sending request.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GenericAdditionalField"
+          }
+        }
+      }
+    },
+    "TransferPaymentCancellationRequest": {
+      "type": "object",
+      "required": [
+        "paymentMessage"
+      ],
+      "properties": {
+        "paymentId": {
+          "type": "string",
+          "description": "The payment gateway id of the payment (if provided)"
+        },
+        "paymentMessage": {
+          "type": "string",
+          "description": "A message returned by the payment gateway as reason of the cancellation"
+        }
+      }
+    },
+    "TransferPaymentConfirmationRequest": {
+      "type": "object",
+      "required": [
+        "paymentId",
+        "authCode"
+      ],
+      "properties": {
+        "paymentId": {
+          "type": "string",
+          "description": "The payment gateway id of the payment (if provided)"
+        },
+        "authCode": {
+          "type": "string",
+          "description": "Gateway's auth code (required), if your payment provider does not assign your payment an auth code insert here the same paymentId or any other info. This will be helpful to identify a transfer by some identificator of the payment gateway"
+        },
+        "paymentMessage": {
+          "type": "string",
+          "description": "A message returned by the payment gateway as reason of the cancellation"
+        }
+      }
+    },
+    "TransferPayment": {
+      "type": "object",
+      "required": [
+        "methodId",
+        "status"
+      ],
+      "properties": {
+        "methodId": {
+          "type": "number",
+          "description": "The payment method id associated with this payment"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Confirmed",
+            "Rejected",
+            "Pending"
+          ],
+          "description": "Status of the payment"
+        },
+        "authCode": {
+          "type": "string",
+          "description": "Auth code of the payment. can be empty for non-confirmed payments"
+        },
+        "message": {
+          "type": "string",
+          "description": "Message of the payment status provided by the payment gateway"
+        },
+        "paymentId": {
+          "type": "string",
+          "description": "Payment Identificator provided by the payment gateway"
+        }
+      }
+    },
+    "EstimateRequest": {
+      "type": "object",
+      "properties": {
+        "sourceCurrency": {
+          "type": "string",
+          "description": "iso3 code of source currency",
+          "example": "EUR"
+        },
+        "sourceCountry": {
+          "type": "string",
+          "description": "iso3 code of the source country",
+          "example": "ESP"
+        },
+        "destinationCountry": {
+          "type": "string",
+          "description": "iso3 code of the destination country"
+        },
+        "payoutCurrency": {
+          "type": "string",
+          "description": "iso3 code of payout currency",
+          "example": "USD"
+        },
+        "paymentMethodId": {
+          "type": "integer",
+          "description": "id of the payment method"
+        },
+        "payerId": {
+          "type": "integer",
+          "description": "id of the payer"
+        },
+        "sourceValue": {
+          "type": "number",
+          "description": "Amount that the customer wants send (net amount) expressed in sourceCurrency"
+        },
+        "destinationValue": {
+          "type": "number",
+          "description": "Amount that the customer wants to receive expressed in payoutCurrency"
+        }
+      }
+    },
+    "RewardsAccount": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "id of the account",
+          "example": 2
+        },
+        "number": {
+          "type": "string",
+          "description": "alphanumeric code of the account",
+          "example": "RE-361493"
+        },
+        "description": {
+          "type": "string",
+          "description": "account description",
+          "example": "Reward Account"
+        },
+        "balance": {
+          "type": "number",
+          "description": "amount of points on the account",
+          "example": 25.5
+        },
+        "pointThresholdExpense": {
+          "type": "number",
+          "description": "minimun amount of points to redeem for discounts or donations",
+          "example": 10
+        }
+      }
+    },
+    "RewardsMovement": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "id of the movement",
+          "example": 41
+        },
+        "credit": {
+          "type": "number",
+          "description": "amount added to balance",
+          "example": 15.5
+        },
+        "debit": {
+          "type": "number",
+          "description": "amount subtracted from balance",
+          "example": 0
+        },
+        "date": {
+          "type": "string",
+          "description": "date of the operation",
+          "example": "2020-01-28T12:47:33.744+01:00"
+        },
+        "description": {
+          "type": "string",
+          "description": "movement description",
+          "example": "Test"
+        },
+        "owner": {
+          "type": "string",
+          "description": "type and id of the operation that triggers the operation",
+          "example": "mtc://transfer/sending/567413"
+        },
+        "resultingBalance": {
+          "type": "number",
+          "description": "amount of points on the account",
+          "example": 40.5
+        }
+      }
+    },
+    "RewardsRate": {
+      "type": "object",
+      "properties": {
+        "srcCountry": {
+          "type": "string",
+          "description": "alphanumeric iso code (3-letters) of the source country",
+          "example": "SWE"
+        },
+        "currency": {
+          "type": "string",
+          "description": "alphanumeric iso code (3-letters) of the payout currency",
+          "example": "EUR"
+        },
+        "value": {
+          "type": "number",
+          "description": "exchange rate of payoutCurrency/points",
+          "example": 0.5
+        }
+      }
+    },
+    "DiscountCodeRequest": {
+      "type": "object",
+      "required": [
+        "currency",
+        "srcCountry",
+        "points"
+      ],
+      "properties": {
+        "currency": {
+          "type": "string",
+          "description": "alphanumeric iso code (3-letters) of the payout currency",
+          "example": "SWE"
+        },
+        "srcCountry": {
+          "type": "string",
+          "description": "alphanumeric iso code (3-letters) of the source country",
+          "example": "EUR"
+        },
+        "points": {
+          "type": "number",
+          "description": "amount of points to redeem on the transfer fees discount code",
+          "example": 22.2
+        }
+      }
+    },
+    "DiscountCodeResponse": {
+      "type": "object",
+      "required": [
+        "promoCode"
+      ],
+      "properties": {
+        "promoCode": {
+          "type": "string",
+          "description": "discount code provided to apply on calculator",
+          "example": "41950914-cf43-466b-ado1-13451b38"
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "JWT": {
+      "description": "You can obtain a JSON Web Token (`access_token`), using our OpenID Connect Authorizations Server",
+      "type": "apiKey",
+      "name": "Authorization: Bearer access_token",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "JWT": []
+    }
+  ]
+}
