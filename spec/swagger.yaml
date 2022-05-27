@@ -557,6 +557,26 @@ paths:
           description: Invalid Request. message attribute of response contains detailed information about the issue. 
           schema: 
             $ref: '#/definitions/Error'
+  /transfer/catalog/paymentMethods/{paymentMethodId}/requirements:
+    get: 
+      summary: Gets payment method requirements
+      description: |
+         Returns if the selected payment mehtod have extra requirements
+
+         For example, if the selected payment method is crypto. It is required to define both currency and network.
+      operationId: GetPaymentMethodsRequirements
+      parameters: 
+        - name: paymentMethodId
+          in: path
+          type: string
+          required: true
+      tags: 
+        - transfer-catalogs
+      responses:
+        200: 
+          description: Successfull operation
+          schema: 
+            $ref: '#/definitions/TransferPaymentMethodRequirements'
   /transfer/catalog/payoutMethods: 
     get: 
       summary: Gets payout Methods
@@ -1628,6 +1648,15 @@ definitions:
         type: "string"
         example: "OGO"
         description: "Code of the Payment Gateway used with this payment method"
+  TransferPaymentMethodRequirements:
+    type: object
+    properties:
+      paymentCurrencies:
+        type: array
+        item: string
+      paymentNetworks:
+        type: array
+        item: string
   TransferDeliveryMethod:
     type: object
     properties: 
