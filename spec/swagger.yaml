@@ -76,7 +76,7 @@ info:
     
     
 tags:
-  - name: registration
+  - name: customers registration
     description: Customer registration operations.
   - name: "transfers"
     description: Manage transfers of a customer.
