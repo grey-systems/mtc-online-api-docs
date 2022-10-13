@@ -19,6 +19,10 @@
   },
   "tags": [
     {
+      "name": "registration",
+      "description": "Customer registration operations."
+    },
+    {
       "name": "transfers",
       "description": "Manage transfers of a customer."
     },
@@ -727,6 +731,32 @@
             "description": "Invalid Request. message attribute of response contains detailed information about the issue.",
             "schema": {
               "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/transfer/catalog/paymentMethods/{paymentMethodId}/requirements": {
+      "get": {
+        "summary": "Gets payment method requirements",
+        "description": "Returns if the selected payment mehtod have extra requirements\n\nFor example, if the selected payment method is crypto. It is required to define both currency and network.\n",
+        "operationId": "GetPaymentMethodsRequirements",
+        "parameters": [
+          {
+            "name": "paymentMethodId",
+            "in": "path",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "tags": [
+          "transfer-catalogs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfull operation",
+            "schema": {
+              "$ref": "#/definitions/TransferPaymentMethodRequirements"
             }
           }
         }
@@ -1627,6 +1657,223 @@
           }
         }
       }
+    },
+    "/user/registration/{realm}": {
+      "post": {
+        "summary": "Start a new customer registration flow.",
+        "description": "Start a new registration flow. If the customer does not exist in the system, this method will return a registration key that you must use in the next steps. \nAlso an OTP code will be sent to the given phone number.\n`This resource is accessible without authorization`\n",
+        "operationId": "customerRegistrationStart",
+        "parameters": [
+          {
+            "name": "X-GS-Device-SSID",
+            "type": "string",
+            "in": "header",
+            "required": true,
+            "description": "The device's SSID"
+          },
+          {
+            "name": "realm",
+            "type": "string",
+            "in": "path",
+            "required": true,
+            "description": "The realm where the customer belongs"
+          },
+          {
+            "name": "StartRegistrationRequest",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StartRegistrationRequest"
+            }
+          }
+        ],
+        "tags": [
+          "customers registration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the generated registration key.",
+            "schema": {
+              "$ref": "#/definitions/StartRegistrationResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid Request. message attribute of response contains detailed information about the issue.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "409": {
+            "description": "Conflict. The given phone number already exists in the system.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/user/registration/{realm}/validate": {
+      "post": {
+        "summary": "Verify the started customer's registration",
+        "description": "When the registration starts, an OTP code was sent to the given phone number. Use this resource to verify the phone number. \n\n`This resource is accessible without authorization`\n",
+        "operationId": "customerRegistrationVerify",
+        "parameters": [
+          {
+            "name": "realm",
+            "type": "string",
+            "in": "path",
+            "required": true,
+            "description": "The realm where the customer belongs"
+          },
+          {
+            "name": "RegistrationVerificationRequest",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/RegistrationVerificationRequest"
+            }
+          }
+        ],
+        "tags": [
+          "customers registration"
+        ],
+        "responses": {
+          "204": {
+            "description": "The registration has been validated successfully."
+          },
+          "400": {
+            "description": "Invalid Request. message attribute of response contains detailed information about the issue.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "409": {
+            "description": "Registration key not valid",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "410": {
+            "description": "Verification code (OTP) expired",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/user/registration/{realm}/complete": {
+      "post": {
+        "summary": "Finish the customer's registration",
+        "description": "Finish the started registration flow. \n",
+        "operationId": "customerRegistrationComplete",
+        "parameters": [
+          {
+            "name": "realm",
+            "type": "string",
+            "in": "path",
+            "required": true,
+            "description": "The realm where the customer belongs"
+          },
+          {
+            "name": "CompleteRegistrationRequest",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CompleteRegistrationRequest"
+            }
+          }
+        ],
+        "tags": [
+          "customers registration"
+        ],
+        "responses": {
+          "201": {
+            "description": "The registration has finished successfully"
+          },
+          "400": {
+            "description": "Invalid Request. message attribute of response contains detailed information about the issue.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "409": {
+            "description": "Registration key not validated or the email already exist in the system",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/user/registration/{realm}/recovery-user-password": {
+      "put": {
+        "summary": "Recovery user's password.",
+        "description": "Recovery the user's password sending a recovery mail to the given direction.\n",
+        "operationId": "recoveryUserPassword",
+        "parameters": [
+          {
+            "name": "realm",
+            "type": "string",
+            "in": "path",
+            "required": true,
+            "description": "The realm where the customer belongs"
+          },
+          {
+            "name": "UserPasswordRecoveryRequest",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UserPasswordRecoveryRequest"
+            }
+          }
+        ],
+        "tags": [
+          "customers registration"
+        ],
+        "responses": {
+          "204": {
+            "description": "The recovery emails was sent properly."
+          },
+          "400": {
+            "description": "Invalid Request. message attribute of response contains detailed information about the issue.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/user/registration/change-user-password": {
+      "put": {
+        "summary": "Change the current user's password.",
+        "description": "Change the current user's password.\n",
+        "operationId": "recoveryUserPassword",
+        "parameters": [
+          {
+            "name": "UserPasswordChangeRequest",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UserPasswordChangeRequest"
+            }
+          }
+        ],
+        "tags": [
+          "customers registration"
+        ],
+        "responses": {
+          "204": {
+            "description": "The password has been changed properly."
+          },
+          "400": {
+            "description": "Invalid Request. message attribute of response contains detailed information about the issue.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -2268,6 +2515,19 @@
           "type": "string",
           "example": "OGO",
           "description": "Code of the Payment Gateway used with this payment method"
+        }
+      }
+    },
+    "TransferPaymentMethodRequirements": {
+      "type": "object",
+      "properties": {
+        "paymentCurrencies": {
+          "type": "array",
+          "item": "string"
+        },
+        "paymentNetworks": {
+          "type": "array",
+          "item": "string"
         }
       }
     },
@@ -3023,6 +3283,118 @@
           "type": "string",
           "description": "discount code provided to apply on calculator",
           "example": "41950914-cf43-466b-ado1-13451b38"
+        }
+      }
+    },
+    "StartRegistrationRequest": {
+      "type": "object",
+      "required": [
+        "phoneNumber"
+      ],
+      "properties": {
+        "phoneNumber": {
+          "type": "string",
+          "description": "The customer's phone number",
+          "example": "+34660123123"
+        }
+      }
+    },
+    "StartRegistrationResponse": {
+      "required": [
+        "registrationKey"
+      ],
+      "properties": {
+        "registrationKey": {
+          "type": "string",
+          "description": "The registration's identifier"
+        }
+      }
+    },
+    "RegistrationVerificationRequest": {
+      "required": [
+        "registrationKey",
+        "verificationCode"
+      ],
+      "properties": {
+        "registrationKey": {
+          "type": "string",
+          "description": "The registration's identifier"
+        },
+        "verificationCode": {
+          "type": "string",
+          "description": "The OTP code sent to the given phone number"
+        }
+      }
+    },
+    "CompleteRegistrationRequest": {
+      "required": [
+        "registrationKey",
+        "email",
+        "firstName",
+        "lastName",
+        "password",
+        "phoneNumber",
+        "pinCode"
+      ],
+      "properties": {
+        "registrationKey": {
+          "type": "string",
+          "description": "The registration's identifier"
+        },
+        "email": {
+          "type": "string",
+          "description": "The customer's email"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The customer's first name"
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The customer's last name"
+        },
+        "password": {
+          "type": "string",
+          "description": "The customer's selected password"
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "The customer's phone number. This should be the same used in the start registration"
+        },
+        "pinCode": {
+          "type": "string",
+          "description": "The customer's pin code"
+        },
+        "referralCode": {
+          "type": "string",
+          "description": "The referral code inserted by the customer"
+        }
+      }
+    },
+    "UserPasswordRecoveryRequest": {
+      "required": [
+        "email"
+      ],
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "The customer's email"
+        }
+      }
+    },
+    "UserPasswordChangeRequest": {
+      "required": [
+        "email",
+        "newPassword"
+      ],
+      "properties": {
+        "newPassword": {
+          "type": "string",
+          "description": "The customer's new password"
+        },
+        "email": {
+          "type": "string",
+          "description": "The customer's email"
         }
       }
     }
