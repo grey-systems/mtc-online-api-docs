@@ -74,7 +74,7 @@ info:
     * HTTP **400** (Invalid Request): The request provided is invalid (request is not well formed, a mandatory field is not provided, etc..). 
     * HTTP **500** (Internal Server Error): Some internal component has failed to process your request. Please notify about this error to GreySystems team. 
 tags:
-  - name: registration
+  - name: customers registration
     description: Customer registration operations.
   - name: transfers
     description: Manage transfers of a customer.
