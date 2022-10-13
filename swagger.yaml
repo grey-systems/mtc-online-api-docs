@@ -2371,6 +2371,7 @@ definitions:
         description: The customer's phone number
         example: '+34660123123'
   StartRegistrationResponse:
+    type: object
     required:
       - registrationKey
     properties:
@@ -2378,6 +2379,7 @@ definitions:
         type: string
         description: The registration's identifier
   RegistrationVerificationRequest:
+    type: object
     required:
       - registrationKey
       - verificationCode
@@ -2389,6 +2391,7 @@ definitions:
         type: string
         description: The OTP code sent to the given phone number
   CompleteRegistrationRequest:
+    type: object
     required:
       - registrationKey
       - email
@@ -2423,6 +2426,7 @@ definitions:
         type: string
         description: The referral code inserted by the customer
   UserPasswordRecoveryRequest:
+    type: object
     required:
       - email
     properties:
@@ -2430,6 +2434,7 @@ definitions:
         type: string
         description: The customer's email
   UserPasswordChangeRequest:
+    type: object
     required:
       - email
       - newPassword
