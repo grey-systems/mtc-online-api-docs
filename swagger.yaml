@@ -1256,6 +1256,8 @@ paths:
       summary: Finish the customer's registration
       description: |
         Finish the started registration flow. 
+
+        `This resource is accessible without authorization`
       operationId: customerRegistrationComplete
       parameters:
         - name: realm
@@ -1286,6 +1288,8 @@ paths:
       summary: Recovery user's password.
       description: |
         Recovery the user's password sending a recovery mail to the given direction.
+
+        `This resource is accessible without authorization`
       operationId: recoveryUserPassword
       parameters:
         - name: realm

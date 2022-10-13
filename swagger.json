@@ -1765,7 +1765,7 @@
     "/user/registration/{realm}/complete": {
       "post": {
         "summary": "Finish the customer's registration",
-        "description": "Finish the started registration flow. \n",
+        "description": "Finish the started registration flow. \n\n`This resource is accessible without authorization`\n",
         "operationId": "customerRegistrationComplete",
         "parameters": [
           {
@@ -1809,7 +1809,7 @@
     "/user/registration/{realm}/recovery-user-password": {
       "put": {
         "summary": "Recovery user's password.",
-        "description": "Recovery the user's password sending a recovery mail to the given direction.\n",
+        "description": "Recovery the user's password sending a recovery mail to the given direction.\n\n`This resource is accessible without authorization`\n",
         "operationId": "recoveryUserPassword",
         "parameters": [
           {
