@@ -1330,6 +1330,28 @@
         }
       }
     },
+    "/beneficiary/{beneficiaryId}/delete": {
+      "delete": {
+        "summary": "Deletes a beneficiary",
+        "description": "Delete the given beneficiary",
+        "tags": [
+          "beneficiaries"
+        ],
+        "parameters": [
+          {
+            "name": "beneficiaryId",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The beneficiary has been deleted"
+          }
+        }
+      }
+    },
     "/beneficiary/{beneficiaryId}/bankAccount": {
       "get": {
         "summary": "List all saved bank accounts for a beneficiary",
